@@ -20,3 +20,8 @@ Enjoy!
 - Extension: **HyperScopes** (*draivin.hscopes*) 
     - to get scope of text.
 
+## Todo
+
+- [ ] support 'reload preview' command
+- [ ] support 'toggle preview' command
+- [ ] support more environment

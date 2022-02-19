@@ -3,8 +3,8 @@
 const vscode = require('vscode')
 
 
-const beginDisplayMath = ["$$", "\\["];
-const endDisplayMath = ["$$", "\\]"];
+const beginDisplayMath = ["$$", "\\[","\\("];
+const endDisplayMath = ["$$", "\\]","\\)"];
 const beginInlineMath = ["$", "\\("];
 const endInlineMath = ["$", "\\)"];
 
@@ -69,7 +69,8 @@ function jumpToEndPosition(document, position, endMath) {
 
 // goto begin delimiter
 function jumpToBeginPosition(document, position, beginMath) {
-	let insertPosition = position;
+	let insertPosition = new vscode.Position;
+	insertPosition = position;
 	let line = position.line;
 
 	let match = new MatchIndex;
@@ -104,6 +105,8 @@ function getMathRange(document, position, beginMath, endMath) {
 	const endPosition = new vscode.Position(endInfo.insertPosition.line, endInfo.match.matchIndex === -1 ? document.lineAt(endInfo.insertPosition).range.end.character : endInfo.insertPosition.character - endInfo.match.matchStr.length)
 	return new vscode.Range(beginPosition, endPosition)
 }
+
+
 
 module.exports = {
 	beginDisplayMath,

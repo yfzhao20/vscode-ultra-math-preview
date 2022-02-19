@@ -22,9 +22,15 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 - fix multi-preview bug
 
 ## [0.0.4]
+(*insider*)
 
-- Initial release 
+- delete test functions 
 
 ## [0.0.5]
+(*insider*)
 
 - moveout keybindings functions.
+
+## [0.0.6]
+
+- fix unusual display in math delimiters
