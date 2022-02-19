@@ -11,6 +11,8 @@ function getScope(document, position) {
 
 /// TODO: Add function for determining environment.
 
+/// TODO: return match brackets
+
 module.exports = {
     getScope
 }

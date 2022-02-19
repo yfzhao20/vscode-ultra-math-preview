@@ -4,12 +4,19 @@
   "description": "useful tools for math input",
   "keywords": [
     "math",
-    "keybindings",
+    "math preview",
     "markdown",
     "latex"
   ],
-  "version": "0.0.3",
-  "publisher": "yfzhao",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yfzhao20/vscode-mathkey"
+  },
+  "bugs": {
+    "url": "https://github.com/yfzhao20/vscode-mathkey/issues"
+  },
+  "version": "0.0.4",
+  "publisher": "yfzhao20",
   "preview": true,
   "engines": {
     "vscode": "^1.61.0"
@@ -18,7 +25,6 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:mathkey.helloWorld",
     "onLanguage:markdown",
     "onLanguage:latex"
   ],
@@ -63,11 +69,9 @@
     "@vscode/test-electron": "^2.0.3",
     "eslint": "^8.6.0",
     "glob": "^7.2.0",
-    "mocha": "^9.1.3",
-    "typescript": "^4.5.4"
+    "mocha": "^9.1.3"
   },
   "dependencies": {
-    "mathjax": "^3.2.0",
-    "svg2base64": "^1.0.7"
+    "mathjax": "^3.2.0"
   }
 }

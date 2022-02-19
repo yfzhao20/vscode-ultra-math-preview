@@ -19,4 +19,3 @@ Enjoy!
 
 - Extension: **HyperScopes** (*draivin.hscopes*) 
     - to get scope of text.
-
