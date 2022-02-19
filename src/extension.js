@@ -8,7 +8,7 @@ const mathPreview = require('./math-preview')
  */
 function activate(context) {
 	// TODO: active log. Delete this.
-	console.log('Congratulations, your extension "mathkey" is now active!');
+	console.log('Congratulations, your extension "UltraPreview" is now active!');
 
 	mathPreview.activate(context);      // toggle math preview
 

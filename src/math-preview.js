@@ -10,7 +10,7 @@ const delimiter = require('./util/get-delimiter-position')
 function activate(context) {
     vscode.window.onDidChangeTextEditorSelection(setPreview)
     context.subscriptions.push(
-        vscode.commands.registerCommand('mathkey.closeAllPreview', clearPreview)
+        vscode.commands.registerCommand('umath.preview.closeAllPreview', clearPreview)
     )
 }
 
