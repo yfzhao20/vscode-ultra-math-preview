@@ -15,7 +15,7 @@
   "bugs": {
     "url": "https://github.com/yfzhao20/vscode-mathkey/issues"
   },
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "yfzhao20",
   "preview": true,
   "engines": {
@@ -34,13 +34,6 @@
       {
         "command": "mathkey.closeAllPreview",
         "title": "MathKey: Close All Preview"
-      }
-    ],
-    "keybindings": [
-      {
-        "command": "mathkey.jumpOutOfMath",
-        "key": "ctrl+enter",
-        "when": "editorTextFocus && !editorReadonly && !suggestWidgetVisible && editorLangId =~ /latex|markdown/"
       }
     ],
     "menus": {
