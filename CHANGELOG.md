@@ -19,7 +19,7 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 
 (*insider*)
 
-- fix multi-preview bug
+- Fix multi-preview bug
 
 ## [0.0.4]
 (*insider*)
@@ -33,10 +33,14 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 
 ## [0.0.6]
 
-- fix unusual display in math delimiters
+- Fix unusual display in math delimiters
 
 ## [0.0.7]
 ## [0.0.8]
 
 - Add icon of extension.
 
+## [0.0.9]
+
+- Partly Fix preview bug in markdown block-quote environment
+- Update icon

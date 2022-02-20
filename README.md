@@ -6,14 +6,14 @@ Real-time math preview for latex and markdown.
 
 Install this extension, and then put your cursor into math block in *markdown(.md)* or *latex(.tex)* file. Then you will get real-time preview:
 
-<img src = "./image/test1.gif">
+![](https://raw.githubusercontent.com/yfzhao20/vscode-ultra-math-preview/main/image/test1.gif)
 
 And when you input math formula, the preview will update:
 
-<img src = "./image/test2.gif">
+![](https://raw.githubusercontent.com/yfzhao20/vscode-ultra-math-preview/main/image/test2.gif)
 
 
-Enjoy and rate five-stars 🌟🌟🌟🌟🌟 ~
+Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 ## Dependency
 
@@ -22,6 +22,11 @@ Enjoy and rate five-stars 🌟🌟🌟🌟🌟 ~
 
 ## Todo
 
-- [ ] support 'reload preview' command
-- [ ] support 'toggle preview' command
-- [ ] support more environment
+- [ ] Support 'reload preview' command
+- [ ] Support 'toggle preview' command
+- [ ] Support more environment
+
+## Known Bugs
+
+- Abnormal preview in markdown block-quote math delimiters.
+- Abnormal preview in delimiters scoped by Markdown-All-In-One extension.

@@ -39,6 +39,12 @@ function setPreview() {
             // don't render blank formula
             if (mathExpression === '' || mathExpression.replace(/[\n\r ]/g, '') === '') return ; 
 
+            // get rid of "blockquote" & "list"
+
+            if (testScope.scope.indexOf("quote") !== -1){
+                mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g,"")
+            }
+
             // enable render \\ as line break
             mathExpression = '\\displaylines{' + mathExpression + '}'
 
@@ -138,6 +144,7 @@ function getMathScope(document, position) {
     let matchDisplayMath    = new RegExp;
     let matchBeginDelimiter = new RegExp;
     let matchEndDelimiter   = new RegExp;
+    
 
     // get Language
     
@@ -178,6 +185,8 @@ function getMathScope(document, position) {
         const matchArray = isDisplayMath ? delimiter.endDisplayMath : delimiter.endInlineMath
         isInEndDelimiter = !!(delimiter.searchSubStr(matchArray,localMatch).matchIndex)
     }
+    // TODO for markdown-all-in-one scope!!!!!
+
 
     return {
         scope,
