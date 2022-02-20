@@ -1,22 +1,23 @@
 {
   "name": "ultra-math-preview",
   "displayName": "Ultra Math Preview",
-  "description": "useful tools for math input",
+  "description": "real-time math preview for latex and markdown",
   "keywords": [
     "math",
     "math preview",
     "markdown",
     "latex"
   ],
+  "icon": "image/icon.ico",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yfzhao20/vscode-math-preview"
+    "url": "https://github.com/yfzhao20/vscode-ultra-math-preview"
   },
   "bugs": {
-    "url": "https://github.com/yfzhao20/vscode-math-preview/issues"
+    "url": "https://github.com/yfzhao20/vscode-ultra-math-preview/issues"
   },
-  "version": "0.0.6",
-  "publisher": "yfzhao20",
+  "version": "0.0.8",
+  "publisher": "yfzhao",
   "preview": true,
   "engines": {
     "vscode": "^1.61.0"

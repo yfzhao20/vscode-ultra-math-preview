@@ -34,3 +34,9 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 ## [0.0.6]
 
 - fix unusual display in math delimiters
+
+## [0.0.7]
+## [0.0.8]
+
+- Add icon of extension.
+
