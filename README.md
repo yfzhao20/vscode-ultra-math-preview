@@ -25,8 +25,3 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 - [ ] Support 'reload preview' command
 - [ ] Support 'toggle preview' command
 - [ ] Support more environment
-
-## Known Bugs
-
-- Abnormal preview in markdown block-quote math delimiters.
-- Abnormal preview in delimiters scoped by Markdown-All-In-One extension.

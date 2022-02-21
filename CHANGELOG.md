@@ -44,3 +44,8 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 
 - Partly Fix preview bug in markdown block-quote environment
 - Update icon
+
+## [0.1.0]
+
+- Fix preview bug in math delimiters.
+- Auto reload preview on error

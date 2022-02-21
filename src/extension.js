@@ -7,18 +7,20 @@ const mathPreview = require('./math-preview')
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-	// TODO: active log. Delete this.
-	console.log('Congratulations, your extension "UltraPreview" is now active!');
+    // TODO: active log. Delete this.
+    console.log('Congratulations, your extension "UltraPreview" is now active!');
 
-	mathPreview.activate(context);      // toggle math preview
+    // toggle math preview
+    mathPreview.activate(context);
 
-	// TODO: Add settings for this extension.
+    // TODO: Add configurations for this extension.
+    // TODO: register 'when' clause
 }
 
 
 function deactivate(){};
 
 module.exports = {
-	activate,
-	deactivate,
+    activate,
+    deactivate,
 }
