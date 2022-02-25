@@ -5,8 +5,8 @@ const vscode = require('vscode');
 const hscopes = vscode.extensions.getExtension('draivin.hscopes');
 
 function getScope(document, position) {
-    if (hscopes === undefined){
-        vscode.window.showErrorMessage(`can not get extension 'draivin.hscopes' `)
+    if (!hscopes || !document || !position){
+        console.log(`function "getScope" causes error.`)
         return undefined
     }
     else {
@@ -15,8 +15,8 @@ function getScope(document, position) {
 }
 
 function getScopeRange(document, position) {
-    if (hscopes === undefined){
-        vscode.window.showErrorMessage(`can not get extension 'draivin.hscopes' `)
+    if (!hscopes || !document || !position){
+        console.log(`function "getScopeRange" causes error.`)
         return undefined
     }
     else {
@@ -30,7 +30,7 @@ function getMathScope(document, position) {
     let isDisplayMath = false; 
 
     // get scope 
-    const scope = getScope(document, position).toString();
+    const scope = getScope(document, position)? getScope(document, position).toString() : undefined;
     const scopeRange = getScopeRange(document, position)
 
     // not in math environment || can't get 'dravin.hscopes' extension

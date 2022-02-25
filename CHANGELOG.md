@@ -48,4 +48,10 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 ## [0.1.0]
 
 - Fix preview bug in math delimiters.
-- Auto reload preview on error
+- Auto reload preview on error.
+
+## [0.1.1]
+
+- Support User-defined macros.
+- Support 'Reload macros' command.
+- Support 'Toggle Math Preview' command.

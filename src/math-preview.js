@@ -1,32 +1,60 @@
 "use strict";
 
 const vscode = require('vscode')
+const macros = require('./get-macros')
 const hscopes = require('./util/get-scopes')
 const delimiter = require('./util/get-delimiter-position')
 
-/**
- * @param {vscode.ExtensionContext} context
- */
-function activate(context) {
-    vscode.window.onDidChangeTextEditorSelection(setPreview)
-    context.subscriptions.push(
-        vscode.commands.registerCommand('umath.preview.closeAllPreview', clearPreview)
-    )
-}
-
-
-// initial preview Array
+// init
 let decorationArray = new Array;
+let macrosInfo = {};
+let macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros")
+let enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
+
 
 // handle MathJax error. Reload on error once.
 let onError = false;
 let resetError = false;
 
-function setPreview() {
+/**
+ * @param {vscode.ExtensionContext} context
+ */
+function activate(context) {
+    macrosInfo = macros.getMacros(vscode.window.activeTextEditor.document, macroConfig)
+    enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
+
+    vscode.window.onDidChangeActiveTextEditor((e)=>{
+        enablePreview && (macrosInfo = macros.getMacros(e.document,macroConfig))
+    })
+
+    vscode.window.onDidChangeTextEditorSelection((e)=>{ 
+        if (!enablePreview) return;
+        macrosInfo = macros.getMacros(e.textEditor.document,macroConfig)
+        setPreview(e.textEditor.document,e.selections[0].active)
+    })
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('umath.preview.closeAllPreview', clearPreview),
+        vscode.commands.registerCommand('umath.preview.reloadMacros', reloadMacros),
+        vscode.commands.registerCommand('umath.preview.toggleMathPreview', toggleMathPreview),
+        vscode.commands.registerCommand('umath.preview.reloadPreview', ()=>{enablePreview && setPreview()}),
+        vscode.workspace.onDidChangeConfiguration(()=>{
+            macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros");
+            enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
+            !enablePreview && clearPreview();
+        })
+    )
+}
+
+
+// main
+function setPreview(document,position) {
 
     clearPreview()
-
-    if (vscode.window.activeTextEditor === undefined) return;
+    
+    if (!vscode.window.activeTextEditor) return;
+    if (!document) document = vscode.window.activeTextEditor.document;
+    if (!position) position = vscode.window.activeTextEditor.selection.active;
 
     // handle error
     if(onError){
@@ -34,13 +62,10 @@ function setPreview() {
         resetError = !resetError
     }
 
-    const document = vscode.window.activeTextEditor.document;
-    const position = vscode.window.activeTextEditor.selection.active;
-
     // TODO: exit when document === undefined (?)
     // TODO: forcibly reload hscopes when error
 
-    const testScope = hscopes.getMathScope(document, position)
+    const testScope =  hscopes.getMathScope(document, position)
 
     // exclude (not math environment) or (in math delimiter)
     if (!!testScope && !testScope.isInBeginDelimiter && !testScope.isInEndDelimiter) {
@@ -54,9 +79,9 @@ function setPreview() {
 
             // get rid of "blockquote" & "list"
 
-            if (testScope.scope.indexOf("quote") !== -1) {
-                mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g, "")
-            }
+            if (testScope.scope.indexOf("quote") !== -1) mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g, "")
+            
+            if (!!macrosInfo) mathExpression = macrosInfo.macrosArray.join('\n') + mathExpression;
 
             // enable render \\ as line break
             mathExpression = '\\displaylines{' + mathExpression + '}'
@@ -72,6 +97,8 @@ function setPreview() {
 
             // don't render blank formula
             if (mathExpression === '' || mathExpression.replace(/ /g, '') === '') return;
+
+            if (!!macrosInfo ) mathExpression = macrosInfo.macrosArray.join('\n') + mathExpression; 
 
             const beginInfo = delimiter.jumpToBeginPosition(document, position, delimiter.beginInlineMath)
             const previewPosition = beginInfo.insertPosition
@@ -97,6 +124,7 @@ function pushPreview(mathExpression, previewPosition) {
             if (svgString.indexOf("error") !== -1) return
             // create preview panel
             let mathPreview = createPreview(svgString)
+            // TODO: scale svg
             decorationArray.push(mathPreview)
             vscode.window.activeTextEditor.setDecorations(mathPreview, [new vscode.Range(previewPosition, previewPosition)])
         })
@@ -108,6 +136,7 @@ function pushPreview(mathExpression, previewPosition) {
                 return
             }
             else{
+                console.log("retry");
                 onError = true;
                 setPreview();
                 return
@@ -124,7 +153,7 @@ function createPreview(mathString) {
         ['content']: `url("data:image/svg+xml;utf8,${mathString.replace(/#/g, "%23").replace(/"/g, "'").replace(/<mjx-container[^<]*><svg/, "<svg").replace("</mjx-container>", "")}")`,
         ['position']: 'absolute',
         ['padding']: '0.5em',
-        ['top']: `1.1rem`,
+        ['top']: `1.15rem`,
         ['display']: `inline-block`,
         ['z-index']: 1,
         ['pointer-events']: 'none',
@@ -133,6 +162,7 @@ function createPreview(mathString) {
         ['border']: '0.5px solid #5e5e5e'
         // TODO: set scale
     })
+    
 
     return vscode.window.createTextEditorDecorationType({
         before: {
@@ -142,16 +172,6 @@ function createPreview(mathString) {
         textDecoration: `none; position: relative;`,
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
     })
-}
-
-function clearPreview() {
-    if (decorationArray.length) {
-        let index = decorationArray.length
-        while (--index >= 0) {
-            decorationArray[index].dispose();
-            decorationArray.splice(index, 1)
-        }
-    }
 }
 
 
@@ -166,6 +186,33 @@ function objectToCssString(settings) {
         })
         .join(' ')
     return cssString
+}
+
+/////////////////////////////////////////////////////////
+
+function clearPreview() {
+    if (decorationArray.length) {
+        let index = decorationArray.length
+        while (--index >= 0) {
+            decorationArray[index].dispose();
+            decorationArray.splice(index, 1)
+        }
+    }
+}
+
+function reloadMacros(){
+    macroConfig = vscode.workspace.getConfiguration().get('umath.preview.macros')
+    macrosInfo = macros.getMacros(vscode.window.activeTextEditor.document, macroConfig)
+}
+
+function toggleMathPreview(){
+    vscode.workspace.getConfiguration().update('umath.preview.enableMathPreview', !enablePreview, true)
+    enablePreview = !enablePreview
+    clearPreview();
+    if(enablePreview){
+        macrosInfo = macros.getMacros(vscode.window.activeTextEditor.document, macroConfig);
+        setPreview()
+    }
 }
 
 module.exports = {

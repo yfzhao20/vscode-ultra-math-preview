@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/yfzhao20/vscode-ultra-math-preview/issues"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "yfzhao",
   "preview": true,
   "engines": {
@@ -35,6 +35,18 @@
       {
         "command": "umath.preview.closeAllPreview",
         "title": "Ultra Math Preview: Close All Preview"
+      },
+      {
+        "command": "umath.preview.reloadPreview",
+        "title": "Ultra Math Preview: Reload Preview"
+      },
+      {
+        "command": "umath.preview.reloadMacros",
+        "title": "Ultra Math Preview: Reload Macros"
+      },
+      {
+        "command": "umath.preview.toggleMathPreview",
+        "title": "Ultra Math Preview: Toggle Math Preview"
       }
     ],
     "menus": {
@@ -43,9 +55,31 @@
           "command": "umath.preview.closeAllPreview",
           "group": "navigation",
           "when": "editorFocus"
+        },
+        {
+          "command": "umath.preview.reloadPreview",
+          "group": "navigation",
+          "when": "editorFocus"
         }
       ]
-    }
+    },
+    "configuration":[
+      {
+        "title": "Ultra Math Preview",
+        "properties": {
+          "umath.preview.enableMathPreview":{
+            "type":"boolean",
+            "default": true,
+            "description": "Show math preview."
+          },
+          "umath.preview.macros":{
+            "type":"array",
+            "default":[],
+            "description": "User-defined macros"
+          }
+        }
+      }
+    ]
   },
   "extensionDependencies": [
     "draivin.hscopes"
