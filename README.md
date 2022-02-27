@@ -1,5 +1,7 @@
 # Ultra Math Preview for VS Code
 
+<img alt="Visual Studio Marketplace Installs" src="https://img.shields.io/visual-studio-marketplace/i/yfzhao.ultra-math-preview"><img alt="Visual Studio Marketplace Version" src="https://img.shields.io/visual-studio-marketplace/v/yfzhao.ultra-math-preview"><img alt="GitHub" src="https://img.shields.io/github/license/yfzhao20/vscode-ultra-math-preview">
+
 Real-time math preview for latex and markdown.
 
 ## Usage
@@ -15,7 +17,7 @@ And when you input math formula, the preview will update:
 
 Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
-## Configurations
+## Configurations & Commands
 
 - You can define macros and Ultra Math Preview will automatically update.
 
@@ -27,6 +29,8 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 - You can use command `Ultra Math Preview: Toggle Math Preview` to enable or disable math preview.
 
+- Background color and foreground color will change with Theme. If it goes invalid, execute `Ultra Math Preview: Reload Preview` Command.
+
 ## Dependency
 
 - Extension: **HyperScopes** (*draivin.hscopes*) 
@@ -34,6 +38,5 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 ## Todo
 
-- [ ] Support 'reload preview' command
 - [ ] Support more environment
 - [ ] Support user-defined CSS style

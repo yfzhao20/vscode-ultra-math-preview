@@ -55,3 +55,7 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 - Support User-defined macros.
 - Support 'Reload macros' command.
 - Support 'Toggle Math Preview' command.
+
+## [0.1.2]
+
+- Automatically change background-color and foreground-color when theme changes.
