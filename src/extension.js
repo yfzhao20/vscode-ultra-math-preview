@@ -13,7 +13,6 @@ function activate(context) {
     // toggle math preview
     mathPreview.activate(context);
 
-    // TODO: Add configurations for this extension.
     // TODO: register 'when' clause
 }
 

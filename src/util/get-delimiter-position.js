@@ -8,6 +8,7 @@ const endDisplayMath = ["$$", "\\]","\\)"];
 const beginInlineMath = ["$", "\\("];
 const endInlineMath = ["$", "\\)"];
 // TODO: Add "$$" to Inline math delimiter array
+// TODO: Add "\begin" & "\end" to Inline math delimiter array
 
 
 function MatchIndex(matchStr, matchIndex) {

@@ -42,7 +42,7 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 
 ## [0.0.9]
 
-- Partly Fix preview bug in markdown block-quote environment
+- Partly fix preview bug in markdown block-quote environment
 - Update icon
 
 ## [0.1.0]
@@ -59,3 +59,8 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 ## [0.1.2]
 
 - Automatically change background-color and foreground-color when theme changes.
+
+## [0.1.3]
+
+- Partly fix "Command xxx not found" error
+- Context menu improvements.

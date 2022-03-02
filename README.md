@@ -1,6 +1,6 @@
 # Ultra Math Preview for VS Code
 
-<img alt="Visual Studio Marketplace Installs" src="https://img.shields.io/visual-studio-marketplace/i/yfzhao.ultra-math-preview"> <img alt="Visual Studio Marketplace Version" src="https://img.shields.io/visual-studio-marketplace/v/yfzhao.ultra-math-preview"> <img alt="GitHub" src="https://img.shields.io/github/license/yfzhao20/vscode-ultra-math-preview">
+<img alt="Visual Studio Marketplace Installs" src="https://img.shields.io/visual-studio-marketplace/i/yfzhao.ultra-math-preview">  <img alt="Visual Studio Marketplace Version" src="https://img.shields.io/visual-studio-marketplace/v/yfzhao.ultra-math-preview">  <img alt="GitHub" src="https://img.shields.io/github/license/yfzhao20/vscode-ultra-math-preview">
 
 Real-time math preview for latex and markdown.
 

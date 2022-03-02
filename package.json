@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/yfzhao20/vscode-ultra-math-preview/issues"
   },
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "yfzhao",
   "preview": true,
   "engines": {
@@ -27,7 +27,11 @@
   ],
   "activationEvents": [
     "onLanguage:markdown",
-    "onLanguage:latex"
+    "onLanguage:latex",
+		"onCommand:umath.preview.reloadPreview",
+		"onCommand:umath.preview.toggleMathPreview",
+		"onCommand:umath.preview.reloadMacros",
+    "onCommand:umath.preview.closeAllPreview"
   ],
   "main": "./src/extension.js",
   "contributes": {
@@ -54,27 +58,27 @@
         {
           "command": "umath.preview.closeAllPreview",
           "group": "navigation",
-          "when": "editorFocus"
+          "when": "editorFocus && editorLangId =~ /latex|markdown/"
         },
         {
           "command": "umath.preview.reloadPreview",
           "group": "navigation",
-          "when": "editorFocus"
+          "when": "editorFocus && editorLangId =~ /latex|markdown/"
         }
       ]
     },
-    "configuration":[
+    "configuration": [
       {
         "title": "Ultra Math Preview",
         "properties": {
-          "umath.preview.enableMathPreview":{
-            "type":"boolean",
+          "umath.preview.enableMathPreview": {
+            "type": "boolean",
             "default": true,
             "description": "Show math preview."
           },
-          "umath.preview.macros":{
-            "type":"array",
-            "default":[],
+          "umath.preview.macros": {
+            "type": "array",
+            "default": [],
             "description": "User-defined macros"
           }
         }
