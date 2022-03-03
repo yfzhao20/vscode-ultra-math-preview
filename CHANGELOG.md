@@ -64,3 +64,8 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 
 - Partly fix "Command xxx not found" error
 - Context menu improvements.
+
+## [0.1.4]
+
+- Partly fix issue#1 by forcibly let `\newcommand*` be `\newcommand`
+- known issue: putting `\newcommand*` in math-blocks may cause error.
