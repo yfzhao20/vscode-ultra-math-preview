@@ -33,9 +33,10 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 ## Dependency
 
-- Extension: **HyperScopes** (*draivin.hscopes*) 
-    - to get scope of text.
-
+- Extension: **HyperScopes Booster** (*yfzhao.hscopes-booster*) 
+    - to get TextMate scope of text.
+    - now you can uninstall *draivin.hscopes* (**HyperScopes**) if no extension depends on that.
+ 
 ## Todo
 
 - [ ] Support more environment

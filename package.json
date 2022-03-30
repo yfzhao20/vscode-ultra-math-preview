@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/yfzhao20/vscode-ultra-math-preview/issues"
   },
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "yfzhao",
   "preview": true,
   "engines": {
@@ -86,7 +86,7 @@
     ]
   },
   "extensionDependencies": [
-    "draivin.hscopes"
+    "yfzhao.hscopes-booster"
   ],
   "scripts": {
     "lint": "eslint .",

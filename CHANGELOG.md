@@ -69,3 +69,8 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 
 - Partly fix issue#1 by forcibly let `\newcommand*` be `\newcommand`
 - known issue: putting `\newcommand*` in math-blocks may cause error.
+
+## [0.1.5]
+
+- Change TextMate extension to `yfzhao.hscopes-booster` (HyperScopes Booster)
+  - Now you can uninstall `draivin.hscopes` (HyperScopes) extension if no extension depends on that.

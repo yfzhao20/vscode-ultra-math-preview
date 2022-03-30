@@ -24,7 +24,8 @@ function activate(context) {
     enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
 
     vscode.window.onDidChangeActiveTextEditor((e) => {
-        enablePreview && (macrosInfo = macros.getMacros(e.document, macroConfig))
+        if( enablePreview && e )
+            macrosInfo = macros.getMacros(e.document, macroConfig);
     })
 
     vscode.window.onDidChangeTextEditorSelection((e) => {
@@ -201,7 +202,7 @@ function objectToCssString(settings) {
 function clearPreview() {
     if (decorationArray.length) {
         let index = decorationArray.length
-        while (--index >= 0) {
+        while (--index >= 0) { // OR: while (index--) {...}
             decorationArray[index].dispose();
             decorationArray.splice(index, 1)
         }
