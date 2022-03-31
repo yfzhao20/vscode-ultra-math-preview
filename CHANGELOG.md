@@ -74,3 +74,7 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 
 - Change TextMate extension to `yfzhao.hscopes-booster` (HyperScopes Booster)
   - Now you can uninstall `draivin.hscopes` (HyperScopes) extension if no extension depends on that.
+
+## [0.1.6]
+
+- Fix a bug which may cause `Cannot read property 'scopes' of null` Error.

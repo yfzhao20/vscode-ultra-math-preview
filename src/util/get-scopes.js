@@ -10,7 +10,7 @@ function getScope(document, position) {
         return undefined
     }
     else {
-        return  hscopes.exports.getScopeAt(document, position).scopes ;
+        return  hscopes?.exports?.getScopeAt(document, position)?.scopes ;
     }
 }
 
@@ -20,7 +20,7 @@ function getScopeRange(document, position) {
         return undefined
     }
     else {
-        return  hscopes.exports.getScopeAt(document, position).range ;
+        return  hscopes?.exports?.getScopeAt(document, position)?.range ;
     }
 }
 
@@ -30,7 +30,7 @@ function getMathScope(document, position) {
     let isDisplayMath = false; 
 
     // get scope 
-    const scope = getScope(document, position)? getScope(document, position).toString() : undefined;
+    const scope =  getScope(document, position)?.toString() ?? undefined;
     const scopeRange = getScopeRange(document, position)
 
     // not in math environment || can't get 'dravin.hscopes' extension
