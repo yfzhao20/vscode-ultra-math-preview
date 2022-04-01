@@ -11,6 +11,7 @@ let decorationArray = new Array;
 let macrosInfo = {};
 let macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros")
 let enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
+let showPosition = vscode.workspace.getConfiguration().get('umath.preview.position')
 
 
 // handle MathJax error. Reload on error once.
@@ -42,6 +43,7 @@ function activate(context) {
         vscode.commands.registerCommand('umath.preview.reloadPreview', () => { enablePreview && setPreview() }),
         vscode.workspace.onDidChangeConfiguration(() => {
             macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros");
+            showPosition = vscode.workspace.getConfiguration().get('umath.preview.position');
             enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
             !enablePreview && clearPreview();
         })
@@ -85,8 +87,15 @@ function setPreview(document, position) {
 
             if (!!macrosInfo) mathExpression = macrosInfo.macrosArray.join('\n') + mathExpression;
 
-            const endInfo = delimiter.jumpToEndPosition(document, position, delimiter.endDisplayMath)
-            const previewPosition = new vscode.Position(endInfo.insertPosition.line, endInfo.insertPosition.character - endInfo.match.matchStr.length)
+            let previewPosition = undefined;
+            if (showPosition === 'top') {
+                const beginInfo = delimiter.jumpToBeginPosition(document, position, delimiter.beginDisplayMath)
+                previewPosition = beginInfo.insertPosition
+            } else {
+                const endInfo = delimiter.jumpToEndPosition(document, position, delimiter.endDisplayMath)
+                previewPosition = new vscode.Position(endInfo.insertPosition.line, endInfo.insertPosition.character - endInfo.match.matchStr.length)
+            }
+            
             pushPreview(mathExpression, true, previewPosition)
         }
         // inline math
@@ -154,7 +163,8 @@ function createPreview(mathString) {
         ['content']: `url("data:image/svg+xml;utf8,${mathString}")`,
         ['position']: 'absolute',
         ['padding']: '0.5em',
-        ['top']: `1.15rem`,
+        // Info: Text and preview SVG are positioned in reverseshow.
+        [showPosition === 'top' ? 'bottom' : 'top']: `1.15rem`,
         ['display']: `inline-block`,
         ['z-index']: 1,
         ['pointer-events']: 'none',

@@ -76,6 +76,15 @@
             "default": true,
             "description": "Show math preview."
           },
+          "umath.preview.position": {
+            "type": "string",
+            "enum": [
+              "top",
+              "bottom"
+            ],
+            "default": "bottom",
+            "description": "Set math preview position."
+          },
           "umath.preview.macros": {
             "type": "array",
             "default": [],
