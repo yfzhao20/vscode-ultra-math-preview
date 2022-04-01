@@ -12,6 +12,7 @@ let macrosInfo = {};
 let macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros")
 let enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
 let showPosition = vscode.workspace.getConfiguration().get('umath.preview.position')
+let renderer = vscode.workspace.getConfiguration().get('umath.preview.renderer')
 
 
 // handle MathJax error. Reload on error once.
@@ -44,6 +45,7 @@ function activate(context) {
         vscode.workspace.onDidChangeConfiguration(() => {
             macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros");
             showPosition = vscode.workspace.getConfiguration().get('umath.preview.position');
+            renderer = vscode.workspace.getConfiguration().get('umath.preview.renderer');
             enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
             !enablePreview && clearPreview();
         })
@@ -118,7 +120,7 @@ function setPreview(document, position) {
 
 
 function pushPreview(mathExpression, isBlock, previewPosition) {
-    texRenderer.mathjax(mathExpression, isBlock)
+    texRenderer[renderer](mathExpression, isBlock)
         .then((svgString) => {
             // exclude error case
             if (svgString.indexOf("error") !== -1) return
