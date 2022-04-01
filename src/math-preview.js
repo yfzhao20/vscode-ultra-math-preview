@@ -2,6 +2,7 @@
 
 const vscode = require('vscode')
 const macros = require('./get-macros')
+const texRenderer = require('./texRenderer')
 const hscopes = require('./util/get-scopes')
 const delimiter = require('./util/get-delimiter-position')
 
@@ -84,12 +85,9 @@ function setPreview(document, position) {
 
             if (!!macrosInfo) mathExpression = macrosInfo.macrosArray.join('\n') + mathExpression;
 
-            // enable render \\ as line break
-            mathExpression = '\\displaylines{' + mathExpression + '}'
-
             const endInfo = delimiter.jumpToEndPosition(document, position, delimiter.endDisplayMath)
             const previewPosition = new vscode.Position(endInfo.insertPosition.line, endInfo.insertPosition.character - endInfo.match.matchStr.length)
-            pushPreview(mathExpression, previewPosition)
+            pushPreview(mathExpression, true, previewPosition)
         }
         // inline math
         else if (!testScope.isDisplayMath) {
@@ -103,22 +101,16 @@ function setPreview(document, position) {
 
             const beginInfo = delimiter.jumpToBeginPosition(document, position, delimiter.beginInlineMath)
             const previewPosition = beginInfo.insertPosition
-            pushPreview(mathExpression, previewPosition)
+            pushPreview(mathExpression, false, previewPosition)
         }
     }
 
 }
 
 
-function pushPreview(mathExpression, previewPosition) {
-    require('mathjax')
-    .init({
-        loader: {
-            load: ['input/tex', 'output/svg']
-        }
-    }).then((MathJax) => {
-            const svg = MathJax.tex2svg(mathExpression, { display: false });
-            const svgString = MathJax.startup.adaptor.outerHTML(svg);
+function pushPreview(mathExpression, isBlock, previewPosition) {
+    texRenderer.mathjax(mathExpression, isBlock)
+        .then((svgString) => {
             // exclude error case
             if (svgString.indexOf("error") !== -1) return
             // create preview panel
