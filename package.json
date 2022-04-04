@@ -107,7 +107,9 @@
     "yfzhao.hscopes-booster"
   ],
   "scripts": {
-    "vscode:prepublish": "esbuild ./src/extension.js --bundle --minify --inject:./src/MathJax-shim.js --define:global.MathJax=MathJax --platform=node --format=cjs --external:vscode --outfile=dist/extension.js",
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.js --bundle --inject:./src/MathJax-shim.js --define:global.MathJax=MathJax --platform=node --format=cjs --external:vscode --outfile=dist/extension.js",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "node ./test/runTest.js"
