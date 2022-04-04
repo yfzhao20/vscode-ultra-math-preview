@@ -10,13 +10,13 @@ this.MathJax = {
     startup: { typeset: false }
 };
 
-require('mathjax/es5/startup');
-require('mathjax/es5/core');
-require('mathjax/es5/adaptors/liteDOM');
-require('mathjax/es5/input/mml');
-require('mathjax/es5/input/tex-full');
-require('mathjax/es5/output/svg');
-require('mathjax/es5/output/svg/fonts/tex');
+require('mathjax-full/components/src/startup/startup');
+require('mathjax-full/components/src/core/core');
+require('mathjax-full/components/src/adaptors/liteDOM/liteDOM');
+require('mathjax-full/components/src/input/mml/mml');
+require('mathjax-full/components/src/input/tex-full/tex-full');
+require('mathjax-full/components/src/output/svg/svg');
+require('mathjax-full/components/src/output/svg/fonts/tex/tex');
 
 MathJax.loader.preLoad(
     'core',
