@@ -4,12 +4,6 @@ const katex = require('katex');
 require('katex/contrib/mhchem');
 
 // Preload MathJax, See https://github.com/mathjax/MathJax-demos-node/tree/master/preload
-this.MathJax = {
-    options: { enableAssistiveMml: false },
-    svg: { fontCache: 'local' },
-    startup: { typeset: false }
-};
-
 require('mathjax-full/components/src/startup/startup');
 require('mathjax-full/components/src/core/core');
 require('mathjax-full/components/src/adaptors/liteDOM/liteDOM');

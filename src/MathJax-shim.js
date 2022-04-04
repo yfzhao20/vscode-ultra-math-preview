@@ -6,4 +6,7 @@
 * See https://esbuild.docschina.org/api/#define
 */
 
-export let MathJax = {};
+export let MathJax = {
+    svg: { fontCache: 'local' },
+    startup: { typeset: false }
+};
