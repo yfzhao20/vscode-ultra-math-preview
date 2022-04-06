@@ -2,6 +2,7 @@
 
 const vscode = require('vscode')
 const macros = require('./get-macros')
+const texRenderer = require('./texRenderer')
 const hscopes = require('./util/get-scopes')
 const delimiter = require('./util/get-delimiter-position')
 
@@ -10,6 +11,8 @@ let decorationArray = new Array;
 let macrosInfo = {};
 let macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros")
 let enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
+let showPosition = vscode.workspace.getConfiguration().get('umath.preview.position')
+let renderer = vscode.workspace.getConfiguration().get('umath.preview.renderer')
 
 
 // handle MathJax error. Reload on error once.
@@ -41,6 +44,8 @@ function activate(context) {
         vscode.commands.registerCommand('umath.preview.reloadPreview', () => { enablePreview && setPreview() }),
         vscode.workspace.onDidChangeConfiguration(() => {
             macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros");
+            showPosition = vscode.workspace.getConfiguration().get('umath.preview.position');
+            renderer = vscode.workspace.getConfiguration().get('umath.preview.renderer');
             enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
             !enablePreview && clearPreview();
         })
@@ -84,12 +89,16 @@ function setPreview(document, position) {
 
             if (!!macrosInfo) mathExpression = macrosInfo.macrosArray.join('\n') + mathExpression;
 
-            // enable render \\ as line break
-            mathExpression = '\\displaylines{' + mathExpression + '}'
-
-            const endInfo = delimiter.jumpToEndPosition(document, position, delimiter.endDisplayMath)
-            const previewPosition = new vscode.Position(endInfo.insertPosition.line, endInfo.insertPosition.character - endInfo.match.matchStr.length)
-            pushPreview(mathExpression, previewPosition)
+            let previewPosition = undefined;
+            if (showPosition === 'top') {
+                const beginInfo = delimiter.jumpToBeginPosition(document, position, delimiter.beginDisplayMath)
+                previewPosition = beginInfo.insertPosition
+            } else {
+                const endInfo = delimiter.jumpToEndPosition(document, position, delimiter.endDisplayMath)
+                previewPosition = new vscode.Position(endInfo.insertPosition.line, endInfo.insertPosition.character - endInfo.match.matchStr.length)
+            }
+            
+            pushPreview(mathExpression, true, previewPosition)
         }
         // inline math
         else if (!testScope.isDisplayMath) {
@@ -103,22 +112,16 @@ function setPreview(document, position) {
 
             const beginInfo = delimiter.jumpToBeginPosition(document, position, delimiter.beginInlineMath)
             const previewPosition = beginInfo.insertPosition
-            pushPreview(mathExpression, previewPosition)
+            pushPreview(mathExpression, false, previewPosition)
         }
     }
 
 }
 
 
-function pushPreview(mathExpression, previewPosition) {
-    require('mathjax')
-    .init({
-        loader: {
-            load: ['input/tex', 'output/svg']
-        }
-    }).then((MathJax) => {
-            const svg = MathJax.tex2svg(mathExpression, { display: false });
-            const svgString = MathJax.startup.adaptor.outerHTML(svg);
+function pushPreview(mathExpression, isBlock, previewPosition) {
+    texRenderer[renderer](mathExpression, isBlock)
+        .then((svgString) => {
             // exclude error case
             if (svgString.indexOf("error") !== -1) return
             // create preview panel
@@ -162,7 +165,8 @@ function createPreview(mathString) {
         ['content']: `url("data:image/svg+xml;utf8,${mathString}")`,
         ['position']: 'absolute',
         ['padding']: '0.5em',
-        ['top']: `1.15rem`,
+        // Info: Text and preview SVG are positioned in reverseshow.
+        [showPosition === 'top' ? 'bottom' : 'top']: `1.15rem`,
         ['display']: `inline-block`,
         ['z-index']: 1,
         ['pointer-events']: 'none',

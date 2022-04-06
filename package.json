@@ -33,7 +33,7 @@
 		"onCommand:umath.preview.reloadMacros",
     "onCommand:umath.preview.closeAllPreview"
   ],
-  "main": "./src/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
@@ -76,6 +76,24 @@
             "default": true,
             "description": "Show math preview."
           },
+          "umath.preview.position": {
+            "type": "string",
+            "enum": [
+              "top",
+              "bottom"
+            ],
+            "default": "bottom",
+            "description": "Set math preview position."
+          },
+          "umath.preview.renderer": {
+            "type": "string",
+            "enum": [
+              "mathjax",
+              "katex"
+            ],
+            "default": "mathjax",
+            "description": "Select math renderer."
+          },
           "umath.preview.macros": {
             "type": "array",
             "default": [],
@@ -89,6 +107,9 @@
     "yfzhao.hscopes-booster"
   ],
   "scripts": {
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.js --bundle --inject:./src/MathJax-shim.js --define:global.MathJax=MathJax --platform=node --format=cjs --external:vscode --outfile=dist/extension.js",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "node ./test/runTest.js"
@@ -99,11 +120,11 @@
     "@types/node": "14.x",
     "@types/vscode": "^1.61.0",
     "@vscode/test-electron": "^2.0.3",
+    "esbuild": "^0.14.29",
     "eslint": "^8.6.0",
     "glob": "^7.2.0",
+    "katex": "^0.15.3",
+    "mathjax-full": "^3.2.0",
     "mocha": "^9.1.3"
-  },
-  "dependencies": {
-    "mathjax": "^3.2.0"
   }
 }
