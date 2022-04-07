@@ -78,3 +78,16 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 ## [0.1.6]
 
 - Fix a bug which may cause `Cannot read property 'scopes' of null` Error.
+
+## [0.2.0]
+
+**Ultra Math Preview is now 0.2.0 !🎉**
+
+([#2](https://github.com/yfzhao20/vscode-ultra-math-preview/pull/2))
+- NEW: new option "Position"(`umath.preview.position`). You can preview your formula on top/bottom of your code.
+- NEW: support `KaTeX` renderer. You can toggle renderer with "Renderer"(`umath.preview.renderer`) option.
+- FIX: fix conflict caused by MathJax. 
+- Other: compress file with `esbuild` to reduce the size.
+- Other: preload `MathJax` components when extension is activated.
+
+Thanks to @Eumeryx .

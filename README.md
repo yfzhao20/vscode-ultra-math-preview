@@ -2,7 +2,7 @@
 
 <img alt="Visual Studio Marketplace Installs" src="https://img.shields.io/visual-studio-marketplace/i/yfzhao.ultra-math-preview">  <img alt="Visual Studio Marketplace Version" src="https://img.shields.io/visual-studio-marketplace/v/yfzhao.ultra-math-preview">  <img alt="GitHub" src="https://img.shields.io/github/license/yfzhao20/vscode-ultra-math-preview">
 
-Real-time math preview for latex and markdown.
+Real-time math preview for LaTeX and markdown.
 
 ## Usage
 
@@ -27,9 +27,13 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 ![](https://raw.githubusercontent.com/yfzhao20/vscode-ultra-math-preview/main/image/macro1.gif)
 
-- You can use command `Ultra Math Preview: Toggle Math Preview` to enable or disable math preview.
+- You can use command `umath.preview.toggleMathPreview`(*Ultra Math Preview: Toggle Math Preview*) to enable or disable math preview.
 
-- Background color and foreground color will change with Theme. If it goes invalid, execute `Ultra Math Preview: Reload Preview` Command.
+- Background color and foreground color will change with Theme. If it goes invalid, execute `umath.preview.reloadPreview`(*Ultra Math Preview: Reload Preview*) Command.
+
+- You can set preview panel on the top/bottom of math block by `umath.preview.position` (*Umath &gt; Preview: Position*) option.
+
+- You can set the renderer as `MathJax`/`KaTeX` by `umath.preview.renderer` (*Umath &gt; Preview: Renderer*).
 
 ## Dependency
 
