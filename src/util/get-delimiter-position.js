@@ -14,13 +14,13 @@ const endLatexInlineMath   = ["\\end{math}"];
 
 function getBegin(isLatex,isDisplay){
     const  newGetBegin = isDisplay ? [beginDisplayMath, beginLatexDisplayMath] : [beginInlineMath,beginLatexInlineMath];
-    newGetBegin[0].push.apply(newGetBegin[0] , isLatex ? newGetBegin[1] : [])
+    newGetBegin[0].push.apply(newGetBegin[0] , (isLatex ? newGetBegin[1] : []))
     return newGetBegin[0]
 }
 
 function getEnd(isLatex, isDisplay){
     const  newGetEnd = isDisplay ? [endDisplayMath, endLatexDisplayMath] : [endInlineMath, endLatexInlineMath];
-    newGetEnd[0].push.apply(newGetEnd[0], isLatex ? newGetEnd[1] : [])
+    newGetEnd[0].push.apply(newGetEnd[0], (isLatex ? newGetEnd[1] : []))
     return newGetEnd[0]
 }
 

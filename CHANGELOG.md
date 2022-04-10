@@ -98,3 +98,7 @@ Thanks to @Eumeryx .
 - NEW: Support more environments, such as `equation`.
 - Other: Add more comments.
 - Other: Remove "Automatically update macros" function.
+
+## [0.2.2]
+
+- FIX: fix a bug that may return wrong range in `markdown` file
