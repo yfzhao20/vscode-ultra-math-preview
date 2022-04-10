@@ -19,7 +19,7 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 ## Configurations & Commands
 
-- You can define macros and Ultra Math Preview will automatically update.
+- You can define macros and ⚠ MANUALLY update by executing `umath.preview.reloadMacros` (*Ultra Math Preview: Reload Macros*). "Automatically updating macros" has been disabled, because it can affect peformance.
 
 ![](https://raw.githubusercontent.com/yfzhao20/vscode-ultra-math-preview/main/image/macro2.gif)
 
@@ -43,5 +43,7 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
  
 ## Todo
 
-- [ ] Support more environment
+
+- [ ] Add `cursor` to "Position"(`umath.preview.position`) options.
+- [x] Support more environments.
 - [ ] Support user-defined CSS style

@@ -4,12 +4,25 @@ const vscode = require('vscode')
 
 
 const beginDisplayMath = ["$$", "\\[","\\("];
-const endDisplayMath = ["$$", "\\]","\\)"];
+const endDisplayMath  =  ["$$", "\\]","\\)"];
 const beginInlineMath = ["$", "\\("];
 const endInlineMath = ["$", "\\)"];
-// TODO: Add "$$" to Inline math delimiter array
-// TODO: Add "\begin" & "\end" to Inline math delimiter array
+const beginLatexDisplayMath = ["\\begin{equation}", "\\begin{eqaution*}","\\begin{align}", "\\begin{align*}", "\\begin{gather}" , "\\begin{gather*}" , "\\begin{displaymath}","\\begin{math}"];
+const endLatexDisplayMath   = ["\\end{equation}", "\\end{equation*}","\\end{align}", "\\end{align*}", "\\end{gather}" , "\\end{gather*}" , "\\end{displaymath}","\\end{math}"];
+const beginLatexInlineMath = ["\\begin{math}"];
+const endLatexInlineMath   = ["\\end{math}"];
 
+function getBegin(isLatex,isDisplay){
+    const  newGetBegin = isDisplay ? [beginDisplayMath, beginLatexDisplayMath] : [beginInlineMath,beginLatexInlineMath];
+    newGetBegin[0].push.apply(newGetBegin[0] , isLatex ? newGetBegin[1] : [])
+    return newGetBegin[0]
+}
+
+function getEnd(isLatex, isDisplay){
+    const  newGetEnd = isDisplay ? [endDisplayMath, endLatexDisplayMath] : [endInlineMath, endLatexInlineMath];
+    newGetEnd[0].push.apply(newGetEnd[0], isLatex ? newGetEnd[1] : [])
+    return newGetEnd[0]
+}
 
 function MatchIndex(matchStr, matchIndex) {
     this.matchStr = matchStr;
@@ -111,13 +124,11 @@ function getMathRange(document, position, beginMath, endMath) {
 
 
 module.exports = {
-    beginDisplayMath,
-    endDisplayMath,
-    beginInlineMath,
-    endInlineMath,
     MatchIndex,
     searchSubStr,
     jumpToBeginPosition,
     jumpToEndPosition,
-    getMathRange
+    getMathRange,
+    getBegin,
+    getEnd
 }

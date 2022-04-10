@@ -91,3 +91,10 @@ All notable changes to the "ultra-math-preview" extension will be documented in 
 - Other: preload `MathJax` components when extension is activated.
 
 Thanks to @Eumeryx .
+
+## [0.2.1]
+
+- FIX: fix a bug of `getMacros()` which may give wrong macros.
+- NEW: Support more environments, such as `equation`.
+- Other: Add more comments.
+- Other: Remove "Automatically update macros" function.

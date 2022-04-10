@@ -1,14 +1,20 @@
 "use strict";
 
 const vscode = require('vscode')
-const macros = require('./get-macros')
+const {getMacros} = require('./get-macros')
 const texRenderer = require('./texRenderer')
-const hscopes = require('./util/get-scopes')
-const delimiter = require('./util/get-delimiter-position')
+const {getMathScope} = require('./util/get-scopes')
+const {
+    jumpToBeginPosition,
+    jumpToEndPosition,
+    getMathRange,
+    getBegin,
+    getEnd
+} = require('./util/get-delimiter-position')
 
 // init
-let decorationArray = new Array;
-let macrosInfo = {};
+let decorationArray = [];
+let macrosArray = [];
 let macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros")
 let enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
 let showPosition = vscode.workspace.getConfiguration().get('umath.preview.position')
@@ -23,44 +29,42 @@ let resetError = false;
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-    macrosInfo = macros.getMacros(vscode.window.activeTextEditor.document, macroConfig)
+    macrosArray = getMacros(vscode.window?.activeTextEditor?.document, macroConfig)
     enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
 
-    vscode.window.onDidChangeActiveTextEditor((e) => {
-        if( enablePreview && e )
-            macrosInfo = macros.getMacros(e.document, macroConfig);
-    })
-
-    vscode.window.onDidChangeTextEditorSelection((e) => {
-        if (!enablePreview) return;
-        macrosInfo = macros.getMacros(e.textEditor.document, macroConfig)
-        setPreview(e.textEditor.document, e.selections[0].active)
-    })
+    vscode.window.onDidChangeActiveTextEditor((e) => {enablePreview && e && (macrosArray = getMacros(e?.document, macroConfig))})
+    vscode.window.onDidChangeTextEditorSelection((e) => {enablePreview && setPreview(e.textEditor.document, e.selections[0].active)})
 
     context.subscriptions.push(
         vscode.commands.registerCommand('umath.preview.closeAllPreview', clearPreview),
         vscode.commands.registerCommand('umath.preview.reloadMacros', reloadMacros),
         vscode.commands.registerCommand('umath.preview.toggleMathPreview', toggleMathPreview),
-        vscode.commands.registerCommand('umath.preview.reloadPreview', () => { enablePreview && setPreview() }),
+        vscode.commands.registerCommand('umath.preview.reloadPreview', () => {
+            if (!enablePreview)
+                return;
+            const editor = vscode.window.activeTextEditor;
+            setPreview(editor.document, editor.selection.active);
+        }),
         vscode.workspace.onDidChangeConfiguration(() => {
             macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros");
             showPosition = vscode.workspace.getConfiguration().get('umath.preview.position');
             renderer = vscode.workspace.getConfiguration().get('umath.preview.renderer');
-            enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
-            !enablePreview && clearPreview();
+            enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview');
+            if(!enablePreview) 
+                clearPreview();
         })
     )
 }
 
-
-// main
+/**
+ * MAIN
+ * @param {vscode.TextDocument} document 
+ * @param {vscode.Position} position 
+ * @returns 
+ */
 function setPreview(document, position) {
-
     clearPreview()
-
-    if (!vscode.window.activeTextEditor) return;
-    if (!document) document = vscode.window.activeTextEditor.document;
-    if (!position) position = vscode.window.activeTextEditor.selection.active;
+    if (!document || !position)  return;
 
     // handle error
     if (onError) {
@@ -68,65 +72,59 @@ function setPreview(document, position) {
         resetError = !resetError
     }
 
-    // TODO: exit when document === undefined (?)
-    // TODO: forcibly reload hscopes when error
-
-    const testScope = hscopes.getMathScope(document, position)
-
+    const testScope = getMathScope(document, position)
     // exclude (not math environment) or (in math delimiter)
     if (!!testScope && !testScope.isInBeginDelimiter && !testScope.isInEndDelimiter) {
+        const beginMath = getBegin(testScope.scope.includes('latex'), testScope.isDisplayMath)
+        const endMath = getEnd(testScope.scope.includes('latex'), testScope.isDisplayMath)
+        const mathRange = getMathRange(document, position, beginMath, endMath)
+        let mathExpression = document.getText(mathRange);
+
+        // don't render blank formula
+        if (mathExpression === '' || mathExpression.replace(/[\n\r ]/g, '') === '')
+            return;
+
         // display math
         if (testScope.isDisplayMath) {
-            const mathRange = delimiter.getMathRange(document, position, delimiter.beginDisplayMath, delimiter.endDisplayMath)
-            let mathExpression = document.getText(mathRange);
-
-            // don't render blank formula
-            if (mathExpression === '' || mathExpression.replace(/[\n\r ]/g, '') === '') return;
-
             // get rid of "blockquote" & "list"
-
-            if (testScope.scope.indexOf("quote") !== -1) mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g, "")
-
-            if (!!macrosInfo) mathExpression = macrosInfo.macrosArray.join('\n') + mathExpression;
-
+            if (testScope.scope.indexOf("quote") !== -1)
+                mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g, "")
+                
+            mathExpression = (macrosArray?.join('\n')??"") + mathExpression;
             let previewPosition = undefined;
             if (showPosition === 'top') {
-                const beginInfo = delimiter.jumpToBeginPosition(document, position, delimiter.beginDisplayMath)
+                const beginInfo = jumpToBeginPosition(document, position, beginMath)
                 previewPosition = beginInfo.insertPosition
             } else {
-                const endInfo = delimiter.jumpToEndPosition(document, position, delimiter.endDisplayMath)
+                const endInfo = jumpToEndPosition(document, position, endMath)
                 previewPosition = new vscode.Position(endInfo.insertPosition.line, endInfo.insertPosition.character - endInfo.match.matchStr.length)
             }
-            
             pushPreview(mathExpression, true, previewPosition)
         }
         // inline math
-        else if (!testScope.isDisplayMath) {
-            const mathRange = delimiter.getMathRange(document, position, delimiter.beginInlineMath, delimiter.endInlineMath)
-            let mathExpression = document.getText(mathRange)
-
-            // don't render blank formula
-            if (mathExpression === '' || mathExpression.replace(/ /g, '') === '') return;
-
-            if (!!macrosInfo) mathExpression = macrosInfo.macrosArray.join('\n') + mathExpression;
-
-            const beginInfo = delimiter.jumpToBeginPosition(document, position, delimiter.beginInlineMath)
+        else {
+            mathExpression = (macrosArray?.join('\n')??"") + mathExpression;
+            const beginInfo = jumpToBeginPosition(document, position, beginMath)
             const previewPosition = beginInfo.insertPosition
             pushPreview(mathExpression, false, previewPosition)
         }
     }
-
 }
 
-
+/**
+ * render and push math preview
+ * @param {string} mathExpression 
+ * @param {boolean} isBlock 
+ * @param {vscode.Position} previewPosition 
+ */
 function pushPreview(mathExpression, isBlock, previewPosition) {
     texRenderer[renderer](mathExpression, isBlock)
         .then((svgString) => {
             // exclude error case
-            if (svgString.indexOf("error") !== -1) return
+            if (svgString.includes("error"))
+                return
             // create preview panel
             let mathPreview = createPreview(svgString)
-            // TODO: scale svg
             decorationArray.push(mathPreview)
             vscode.window.activeTextEditor.setDecorations(mathPreview, [new vscode.Range(previewPosition, previewPosition)])
         })
@@ -140,13 +138,18 @@ function pushPreview(mathExpression, isBlock, previewPosition) {
             else {
                 console.log("retry");
                 onError = true;
-                setPreview();
+                const editor = vscode.window.activeTextEditor;
+                setPreview(editor.document, editor.selection.active);
                 return
             }
         });
 }
 
-
+/**
+ * process svg string and create preview panel
+ * @param {string} mathString 
+ * @returns {vscode.TextEditorDecorationType} 
+ */
 function createPreview(mathString) {
 
     // TODO: add colortheme-kind to global variable
@@ -154,10 +157,10 @@ function createPreview(mathString) {
     const stringColor = (vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? '#111' : '#fff'); // = Light
 
     mathString = mathString.replace(/"/g, "'")
-    .replace(/(?<=style\s*=\s*)'/, `'color:${stringColor};`)
-    .replace(/#/g, "%23")
-    .replace(/<mjx-container[^<]*><svg/, "<svg")
-    .replace("</mjx-container>", "")
+        .replace(/(?<=style\s*=\s*)'/, `'color:${stringColor};`)
+        .replace(/#/g, "%23")
+        .replace(/<mjx-container[^<]*><svg/, "<svg")
+        .replace("</mjx-container>", "")
 
     const defaultCss = objectToCssString({
         // TODO: is there a better way to process svg string? 
@@ -176,7 +179,6 @@ function createPreview(mathString) {
         // TODO: set scale
     })
 
-
     return vscode.window.createTextEditorDecorationType({
         before: {
             contentText: '',
@@ -187,7 +189,7 @@ function createPreview(mathString) {
     })
 }
 
-
+// from `hoovercj.vscode-power-mode` extension
 function objectToCssString(settings) {
     let value = ''
     const cssString = Object.keys(settings)
@@ -204,28 +206,29 @@ function objectToCssString(settings) {
 /////////////////////////////////////////////////////////
 
 function clearPreview() {
-    if (decorationArray.length) {
-        let index = decorationArray.length
-        while (--index >= 0) { // OR: while (index--) {...}
-            decorationArray[index].dispose();
-            decorationArray.splice(index, 1)
-        }
-    }
+    for (let thisDeco of decorationArray)
+        thisDeco.dispose()
+    decorationArray.length = 0;
 }
 
 function reloadMacros() {
+    if (!enablePreview) 
+        return;
     macroConfig = vscode.workspace.getConfiguration().get('umath.preview.macros')
-    macrosInfo = macros.getMacros(vscode.window.activeTextEditor.document, macroConfig)
+    macrosArray = getMacros(vscode.window.activeTextEditor.document, macroConfig)
+    const editor = vscode.window.activeTextEditor;
+    setPreview(editor.document, editor.selection.active);
 }
 
 function toggleMathPreview() {
     vscode.workspace.getConfiguration().update('umath.preview.enableMathPreview', !enablePreview, true)
     enablePreview = !enablePreview
     clearPreview();
-    if (enablePreview) {
-        macrosInfo = macros.getMacros(vscode.window.activeTextEditor.document, macroConfig);
-        setPreview()
-    }
+    if (!enablePreview) 
+        return;
+    const editor = vscode.window.activeTextEditor;
+    macrosArray = getMacros(editor.document, macroConfig);
+    setPreview(editor.document, editor.selection.active);
 }
 
 module.exports = {
