@@ -14,16 +14,13 @@ function getScope(document, position) {
         console.log(`function "getScope" causes error.`)
         return undefined
     }
-    else {
-        return  hscopes?.exports?.getScopeAt(document, position);
-    }
+    return  hscopes?.exports?.getScopeAt(document, position);
 }
 
 /**
  * get Math Scope
  * @param {vscode.TextDocument} document 
  * @param {vscode.Position} position 
- * @returns {Object}
  */
 function getMathScope(document, position) {
     if (!document.languageId.match(/latex|markdown/)) 

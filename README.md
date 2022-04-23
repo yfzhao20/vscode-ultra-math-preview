@@ -45,5 +45,7 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 
 - [ ] Add `cursor` to "Position"(`umath.preview.position`) options.
-- [x] Support more environments.
+- [ ] Add `escape` keybinding for closing preview panel.
 - [ ] Support user-defined CSS style
+- [x] Support more environments.
+- [x] Fix alignment bug

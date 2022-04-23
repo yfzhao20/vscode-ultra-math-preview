@@ -102,3 +102,16 @@ Thanks to @Eumeryx .
 ## [0.2.2]
 
 - FIX: fix a bug that may return wrong range in `markdown` file
+
+## [0.2.3]
+
+- FIX: fix alignment but in LaTeX file
+- Other: several enhancements.
+- 
+<!-- 
+作者英文太烂了，下面是详细的修复和新增：
+- 重写字符串搜索逻辑 `searchSubStr()` ，结构更加简明，返回值添加 `null`。相应修改了跳转到定界符的函数。
+- 获取数学范围时，将同时包含定界符，然后切去 `$$` 等 MathJax 不支持的定界符。
+- 重写了识别空白公式的逻辑。
+- 没了。`curson Position` 的选项下次加
+-->

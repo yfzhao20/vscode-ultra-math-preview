@@ -3,74 +3,67 @@
 const vscode = require('vscode')
 
 
-const beginDisplayMath = ["$$", "\\[","\\("];
-const endDisplayMath  =  ["$$", "\\]","\\)"];
-const beginInlineMath = ["$", "\\("];
-const endInlineMath = ["$", "\\)"];
-const beginLatexDisplayMath = ["\\begin{equation}", "\\begin{eqaution*}","\\begin{align}", "\\begin{align*}", "\\begin{gather}" , "\\begin{gather*}" , "\\begin{displaymath}","\\begin{math}"];
-const endLatexDisplayMath   = ["\\end{equation}", "\\end{equation*}","\\end{align}", "\\end{align*}", "\\end{gather}" , "\\end{gather*}" , "\\end{displaymath}","\\end{math}"];
-const beginLatexInlineMath = ["\\begin{math}"];
-const endLatexInlineMath   = ["\\end{math}"];
+const beginDisplayMath = [["$$", "\\[","\\("], ["$$", "\\[","\\(", "\\begin{equation}", "\\begin{eqaution*}","\\begin{align}", "\\begin{align*}", "\\begin{gather}" , "\\begin{gather*}" , "\\begin{displaymath}","\\begin{math}"]];
+const endDisplayMath  =  [["$$", "\\]","\\)"], ["$$", "\\]","\\)", "\\end{equation}", "\\end{equation*}","\\end{align}", "\\end{align*}", "\\end{gather}" , "\\end{gather*}" , "\\end{displaymath}","\\end{math}"]];
+const beginInlineMath = [["$", "\\("],["$", "\\(", "\\begin{math}"]];
+const endInlineMath = [["$", "\\)"],["$", "\\)", "\\end{math}"]];
 
 function getBegin(isLatex,isDisplay){
-    const  newGetBegin = isDisplay ? [beginDisplayMath, beginLatexDisplayMath] : [beginInlineMath,beginLatexInlineMath];
-    newGetBegin[0].push.apply(newGetBegin[0] , (isLatex ? newGetBegin[1] : []))
-    return newGetBegin[0]
+    const  newGetBegin = isDisplay ? beginDisplayMath : beginInlineMath;
+    return newGetBegin[+isLatex]
 }
 
 function getEnd(isLatex, isDisplay){
-    const  newGetEnd = isDisplay ? [endDisplayMath, endLatexDisplayMath] : [endInlineMath, endLatexInlineMath];
-    newGetEnd[0].push.apply(newGetEnd[0], (isLatex ? newGetEnd[1] : []))
-    return newGetEnd[0]
+    const  newGetEnd = isDisplay ? endDisplayMath : endInlineMath;
+    return newGetEnd[+isLatex]
 }
 
-function MatchIndex(matchStr, matchIndex) {
+/**
+ * @param {string} matchStr match string result
+ * @param {number} matchStrIndex match index in string
+ */
+function MatchInfo(matchStr, matchStrIndex) {
     this.matchStr = matchStr;
-    this.matchIndex = matchIndex;
+    this.matchStrIndex = matchStrIndex;
 }
 
-// find first match substring
+/**
+ * find first match substring
+ * @param {string[]} strArr match array
+ * @param {string} str string to match
+ * @param {boolean} lastMatch 
+ * @returns {MatchInfo | null}
+ */
 function searchSubStr(strArr, str, lastMatch) {
-    let count = 0;
-    let match = new MatchIndex('', -1)
-    while (count < strArr.length) {
-        if (
-            (match.matchIndex = (
-                lastMatch
-                ? str.lastIndexOf(strArr[count])
-                : str.indexOf(strArr[count])
-                )
-            ) !== -1
-        ) {
-            match.matchStr = strArr[count];
-            break;
-        }
-        count++;
+    for (let count = 0; count < strArr.length; count++) {
+        let charIndex = lastMatch ? str.lastIndexOf(strArr[count]) : str.indexOf(strArr[count])
+        if ( charIndex !== -1 ) 
+            return new MatchInfo(strArr[count], charIndex)
     }
-    return match;
+    return null;
 }
 
-// goto end delimiter
+/**
+ * goto end delimiter
+ * @param {vscode.TextDocument} document 
+ * @param {vscode.Position} position 
+ * @param {string[]} endMath 
+ */
 function jumpToEndPosition(document, position, endMath) {
-    const textLine = document.lineCount;  // get total line count
-    let insertPosition = new vscode.Position;
-    insertPosition = position;
+    let insertPosition = position;
     let line = position.line;
-
-    let match = new MatchIndex;
 
     // current line
     let localRangeText = document.getText(new vscode.Range(position, document.lineAt(position).range.end));
-    match = searchSubStr(endMath, localRangeText);
-
-    if (match.matchIndex !== -1) {							// y: jump
-        insertPosition = position.with(line, position.character + match.matchIndex + match.matchStr.length)
+    let match = searchSubStr(endMath, localRangeText);
+    if (match) {							// y: jump
+        insertPosition = new vscode.Position(line, position.character + match.matchStrIndex + match.matchStr.length)
     }
     else {													// n: loop
-        while (++line < textLine) {
+        while (++line < document.lineCount) {
             match = searchSubStr(endMath, document.lineAt(line).text);
-            if (match.matchIndex !== -1) {
-                insertPosition = position.with(line, match.matchIndex + match.matchStr.length);
+            if (match) {
+                insertPosition = new vscode.Position(line, match.matchStrIndex + match.matchStr.length);
                 break
             }
         }
@@ -79,29 +72,30 @@ function jumpToEndPosition(document, position, endMath) {
         insertPosition,
         match
     };
-
 }
 
-// goto begin delimiter
+/**
+ * goto begin delimiter
+ * @param {vscode.TextDocument} document 
+ * @param {vscode.Position} position 
+ * @param {string[]} beginMath 
+ * @returns 
+ */
 function jumpToBeginPosition(document, position, beginMath) {
-    let insertPosition = new vscode.Position;
-    insertPosition = position;
+    let insertPosition = position;
     let line = position.line;
 
-    let match = new MatchIndex;
-
     // current line
-    let localRangeText = document.getText(new vscode.Range(position.with(position.line, 0), position));
-    match = searchSubStr(beginMath, localRangeText, true);
-
-    if (match.matchIndex !== -1) {							// y: jump
-        insertPosition = position.with(line, match.matchIndex)
+    let localRangeText = document.getText(new vscode.Range(line, 0, line, position.character));
+    let match = searchSubStr(beginMath, localRangeText, true);
+    if (match) {							// y: jump
+        insertPosition = new vscode.Position(line, match.matchStrIndex)
     }
     else {													// n: loop
         while (--line >= 0) {
             match = searchSubStr(beginMath, document.lineAt(line).text, true);
-            if (match.matchIndex !== -1) {
-                insertPosition = position.with(line, match.matchIndex);
+            if (match) {
+                insertPosition = new vscode.Position(line, match.matchStrIndex);
                 break
             }
         }
@@ -110,25 +104,13 @@ function jumpToBeginPosition(document, position, beginMath) {
         insertPosition,
         match
     };
-
 }
-
-function getMathRange(document, position, beginMath, endMath) {
-    const beginInfo = jumpToBeginPosition(document, position, beginMath)
-    const endInfo = jumpToEndPosition(document, position, endMath)
-    const beginPosition = new vscode.Position(beginInfo.insertPosition.line, beginInfo.insertPosition.character + beginInfo.match.matchStr.length)
-    const endPosition = new vscode.Position(endInfo.insertPosition.line, endInfo.match.matchIndex === -1 ? document.lineAt(endInfo.insertPosition).range.end.character : endInfo.insertPosition.character - endInfo.match.matchStr.length)
-    return new vscode.Range(beginPosition, endPosition)
-}
-
-
 
 module.exports = {
-    MatchIndex,
+    MatchIndex: MatchInfo,
     searchSubStr,
     jumpToBeginPosition,
     jumpToEndPosition,
-    getMathRange,
     getBegin,
     getEnd
 }

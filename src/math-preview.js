@@ -4,13 +4,7 @@ const vscode = require('vscode')
 const {getMacros} = require('./get-macros')
 const texRenderer = require('./texRenderer')
 const {getMathScope} = require('./util/get-scopes')
-const {
-    jumpToBeginPosition,
-    jumpToEndPosition,
-    getMathRange,
-    getBegin,
-    getEnd
-} = require('./util/get-delimiter-position')
+const {jumpToBeginPosition, jumpToEndPosition, getBegin, getEnd} = require('./util/get-delimiter-position')
 
 // init
 let decorationArray = [];
@@ -74,41 +68,37 @@ function setPreview(document, position) {
 
     const testScope = getMathScope(document, position)
     // exclude (not math environment) or (in math delimiter)
-    if (!!testScope && !testScope.isInBeginDelimiter && !testScope.isInEndDelimiter) {
-        const beginMath = getBegin(testScope.scope.includes('latex'), testScope.isDisplayMath)
-        const endMath = getEnd(testScope.scope.includes('latex'), testScope.isDisplayMath)
-        const mathRange = getMathRange(document, position, beginMath, endMath)
-        let mathExpression = document.getText(mathRange);
+    if (!testScope || testScope.isInBeginDelimiter || testScope.isInEndDelimiter) return;
+    
+    // isLatex: scope.includes('meta.math.block')
+    const beginMath = getBegin(testScope.scope.includes('meta.math.block'), testScope.isDisplayMath)
+    const endMath = getEnd(testScope.scope.includes('meta.math.block'), testScope.isDisplayMath)
+    const beginInfo = jumpToBeginPosition(document, position, beginMath)
+    const endInfo = jumpToEndPosition(document, position, endMath)
 
-        // don't render blank formula
-        if (mathExpression === '' || mathExpression.replace(/[\n\r ]/g, '') === '')
-            return;
-
-        // display math
-        if (testScope.isDisplayMath) {
-            // get rid of "blockquote" & "list"
-            if (testScope.scope.indexOf("quote") !== -1)
-                mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g, "")
-                
-            mathExpression = (macrosArray?.join('\n')??"") + mathExpression;
-            let previewPosition = undefined;
-            if (showPosition === 'top') {
-                const beginInfo = jumpToBeginPosition(document, position, beginMath)
-                previewPosition = beginInfo.insertPosition
-            } else {
-                const endInfo = jumpToEndPosition(document, position, endMath)
-                previewPosition = new vscode.Position(endInfo.insertPosition.line, endInfo.insertPosition.character - endInfo.match.matchStr.length)
-            }
-            pushPreview(mathExpression, true, previewPosition)
-        }
-        // inline math
-        else {
-            mathExpression = (macrosArray?.join('\n')??"") + mathExpression;
-            const beginInfo = jumpToBeginPosition(document, position, beginMath)
-            const previewPosition = beginInfo.insertPosition
-            pushPreview(mathExpression, false, previewPosition)
-        }
-    }
+    // cut some delimiters
+    const cutBegin = beginInfo.match?.matchStr?.match(/\$\$|\$|\\\[|\\\(|\\begin\{math\}|\\begin\{displaymath\}/)?.[0]?.length??0
+    const cutEnd = (endInfo.match ? (cutBegin > 2 ? cutBegin-2 : cutBegin) : 0)  // 'begin' => 'end'
+    const mathRange = new vscode.Range(
+        beginInfo.insertPosition.line,
+        beginInfo.insertPosition.character + cutBegin,
+        endInfo.insertPosition.line,
+        endInfo.insertPosition.character - cutEnd
+        )
+    let mathExpression = document.getText(mathRange);
+    
+    // don't render blank formula
+    if (mathExpression.match(/^\s*$/))  return;
+        
+    // get rid of "blockquote" & "list"
+    if (testScope.isDisplayMath && testScope.scope.indexOf("quote") !== -1)
+        mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g, "")
+    mathExpression = (macrosArray?.join('\n')??"") + mathExpression;
+    const previewPosition = (showPosition === 'bottom' && testScope.isDisplayMath 
+                        ? new vscode.Position(endInfo.insertPosition.line, endInfo.insertPosition.character - endInfo.match?.matchStr?.length??0) 
+                        : beginInfo.insertPosition  )
+    
+    pushPreview(mathExpression, testScope.isDisplayMath, previewPosition)
 }
 
 /**
@@ -153,7 +143,6 @@ function pushPreview(mathExpression, isBlock, previewPosition) {
 function createPreview(mathString) {
 
     // TODO: add colortheme-kind to global variable
-    // TODO: add global configuration
     const stringColor = (vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? '#111' : '#fff'); // = Light
 
     mathString = mathString.replace(/"/g, "'")
@@ -172,9 +161,8 @@ function createPreview(mathString) {
         [showPosition === 'top' ? 'bottom' : 'top']: `1.15rem`,
         ['display']: `inline-block`,
         ['z-index']: 1,
-        ['pointer-events']: 'none',
+        ['pointer-events']: 'none', //`auto`,
         ['background-color']: `var(--vscode-editor-background)`,
-        // ['filter']: 'invert(100%)',
         ['border']: '0.5px solid var(--vscode-editorWidget-border)'
         // TODO: set scale
     })
