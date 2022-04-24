@@ -35,6 +35,12 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 - You can set the renderer as `MathJax`/`KaTeX` by `umath.preview.renderer` (*Umath &gt; Preview: Renderer*).
 
+- You can set Custom CSS in `umath.preview.customCSS` (*Umath &gt; Preview: Custom CSS*).
+
+![](https://raw.githubusercontent.com/yfzhao20/vscode-ultra-math-preview/main/image/css.gif)
+
+- You can press `Escape` to close live preview panel.
+
 ## Dependency
 
 - Extension: **HyperScopes Booster** (*yfzhao.hscopes-booster*) 
@@ -45,7 +51,8 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 
 - [ ] Add `cursor` to "Position"(`umath.preview.position`) options.
-- [ ] Add `escape` keybinding for closing preview panel.
-- [ ] Support user-defined CSS style
+- [ ] Automatically adjust preview position.
+- [x] Add `escape` keybinding for closing preview panel.
+- [x] Support user-defined CSS style
 - [x] Support more environments.
 - [x] Fix alignment bug

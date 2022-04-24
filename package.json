@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/yfzhao20/vscode-ultra-math-preview/issues"
   },
-  "version": "0.2.3",
+  "version": "0.2.4",
   "publisher": "yfzhao",
   "preview": true,
   "engines": {
@@ -97,9 +97,21 @@
           "umath.preview.macros": {
             "type": "array",
             "default": [],
-            "description": "User-defined macros"
+            "description": "User-defined macros."
+          },
+          "umath.preview.customCSS": {
+            "type": "array",
+            "default": [],
+            "description": "User-defined CSS style."
           }
         }
+      }
+    ],
+    "keybindings":[
+      {
+        "command": "umath.preview.closeAllPreview",
+        "key": "escape",
+        "when": "umathShowPreview"
       }
     ]
   },

@@ -105,13 +105,26 @@ Thanks to @Eumeryx .
 
 ## [0.2.3]
 
-- FIX: fix alignment but in LaTeX file
+- FIX: fix alignment bug in LaTeX file
 - Other: several enhancements.
-- 
+
 <!-- 
 作者英文太烂了，下面是详细的修复和新增：
 - 重写字符串搜索逻辑 `searchSubStr()` ，结构更加简明，返回值添加 `null`。相应修改了跳转到定界符的函数。
 - 获取数学范围时，将同时包含定界符，然后切去 `$$` 等 MathJax 不支持的定界符。
 - 重写了识别空白公式的逻辑。
 - 没了。`curson Position` 的选项下次加
+-->
+
+## [0.2.4]
+
+- FIX: fix some typos
+- NEW: <kbd>Escape</kbd> keybinding for closing preview panel. (With `when` clause)
+- NEW: Add custom CSS support.
+- Other: rewrite CSS string.
+- Other: several enhancements.
+
+<!-- 
+- 更改了svg字符串处理逻辑，字符串处理效率提升 5000% （其实是填了之前的坑，这样字符串处理用时从 ~3 ms 降低到 ~100 us）
+- 重写了自定义宏的处理逻辑
 -->
