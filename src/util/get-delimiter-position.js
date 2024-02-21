@@ -3,7 +3,7 @@
 const vscode = require('vscode')
 
 
-const beginDisplayMath = [["$$", "\\[","\\("], ["$$", "\\[","\\(", "\\begin{equation}", "\\begin{eqaution*}","\\begin{align}", "\\begin{align*}", "\\begin{gather}" , "\\begin{gather*}" , "\\begin{displaymath}","\\begin{math}"]];
+const beginDisplayMath = [["$$", "\\[","\\("], ["$$", "\\[","\\(", "\\begin{equation}", "\\begin{equation*}","\\begin{align}", "\\begin{align*}", "\\begin{gather}" , "\\begin{gather*}" , "\\begin{displaymath}","\\begin{math}"]];
 const endDisplayMath  =  [["$$", "\\]","\\)"], ["$$", "\\]","\\)", "\\end{equation}", "\\end{equation*}","\\end{align}", "\\end{align*}", "\\end{gather}" , "\\end{gather*}" , "\\end{displaymath}","\\end{math}"]];
 const beginInlineMath = [["$", "\\("],["$", "\\(", "\\begin{math}"]];
 const endInlineMath = [["$", "\\)"],["$", "\\)", "\\end{math}"]];
