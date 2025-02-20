@@ -19,6 +19,7 @@ let cssConfig = vscode.workspace.getConfiguration().get('umath.preview.customCSS
 // handle MathJax error. Reload on error once.
 let onError = false;
 let resetError = false;
+let e_temp;
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -39,10 +40,12 @@ function activate(context) {
         }),
         
         vscode.window.onDidChangeActiveTextEditor((e) => { enablePreview && e && (macrosString = getMacros(e?.document, macroConfig)?.join('\n') ?? "") }),
-        vscode.window.onDidChangeTextEditorSelection((e) => { enablePreview && e && setPreview(e?.textEditor?.document, e?.selections[0]?.active)}),
+        vscode.window.onDidChangeTextEditorSelection((e) => {
+            enablePreview && e && setPreview(e?.textEditor?.document, e?.selections[0]?.active); 
+            e_temp = e;
+        }),
         vscode.window.onDidChangeTextEditorVisibleRanges((e) => {
-            console.log('The visible range changes');
-            enablePreview &&e&& setPreview(e?.textEditor?.document, e?.selections[0]?.active)
+            enablePreview &&e&& setPreview(e_temp?.textEditor?.document, e_temp?.selections[0]?.active)
         }),
 
         vscode.workspace.onDidChangeConfiguration((e) => {
@@ -116,7 +119,6 @@ function setPreview(document, position) {
         ? new vscode.Position(LowerBoundLine,endInfo.insertPosition.character - endInfo.match?.matchStr?.length ?? 0)
         : UpperBoundLine)
     pushPreview(mathExpression, testScope.isDisplayMath, previewPosition);
-    console.log('Preview has been updated')
 }
 
 /**

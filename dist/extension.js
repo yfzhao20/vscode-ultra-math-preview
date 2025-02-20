@@ -64543,6 +64543,7 @@ var require_math_preview = __commonJS({
     var cssConfig = vscode2.workspace.getConfiguration().get("umath.preview.customCSS")?.join("");
     var onError = false;
     var resetError = false;
+    var e_temp;
     function activate2(context) {
       macrosString = getMacros(vscode2.window?.activeTextEditor?.document, macroConfig)?.join("\n") ?? "";
       enablePreview = vscode2.workspace.getConfiguration().get("umath.preview.enableMathPreview");
@@ -64561,10 +64562,10 @@ var require_math_preview = __commonJS({
         }),
         vscode2.window.onDidChangeTextEditorSelection((e) => {
           enablePreview && e && setPreview(e?.textEditor?.document, e?.selections[0]?.active);
+          e_temp = e;
         }),
         vscode2.window.onDidChangeTextEditorVisibleRanges((e) => {
-          console.log("The visible range changes");
-          enablePreview && e && setPreview(e?.textEditor?.document, e?.selections[0]?.active);
+          enablePreview && e && setPreview(e_temp?.textEditor?.document, e_temp?.selections[0]?.active);
         }),
         vscode2.workspace.onDidChangeConfiguration((e) => {
           e && e.affectsConfiguration("umath.preview.macros") && (macroConfig = vscode2.workspace.getConfiguration().get("umath.preview.macros"));
@@ -64613,7 +64614,6 @@ var require_math_preview = __commonJS({
       LowerBoundLine = Math.min(endLine, endInfo.insertPosition.line) - 10;
       const previewPosition = positionConfig === "bottom" && testScope.isDisplayMath ? new vscode2.Position(LowerBoundLine, endInfo.insertPosition.character - endInfo.match?.matchStr?.length) : UpperBoundLine;
       pushPreview(mathExpression, testScope.isDisplayMath, previewPosition);
-      console.log("Preview has been updated");
     }
     function pushPreview(mathExpression, isBlock, previewPosition) {
       texRenderer[rendererConfig](mathExpression, isBlock).then((svgString) => {
