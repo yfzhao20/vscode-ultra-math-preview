@@ -109,15 +109,28 @@ function setPreview(document, position) {
     // set preview position
     const visibleRanges = vscode.window.activeTextEditor.visibleRanges[0];
     const StartLine = visibleRanges.start.line;
-    const endLine = visibleRanges.end.line;
+    const EndLine = visibleRanges.end.line;
 
-    let UpperBoundLine, LowerBoundLine
-    UpperBoundLine = Math.max(StartLine, endInfo.insertPosition.line)+5;
-    LowerBoundLine = Math.min(endLine, endInfo.insertPosition.line)-10;
+    // get vscode workspace line height
+    let lineHeight = vscode.workspace.getConfiguration('editor', null).get('lineHeight');
 
-    const previewPosition = (positionConfig === 'bottom' && testScope.isDisplayMath
-        ? new vscode.Position(LowerBoundLine,endInfo.insertPosition.character - endInfo.match?.matchStr?.length ?? 0)
-        : UpperBoundLine)
+    if (lineHeight === 0 || lineHeight === undefined || lineHeight === null) {
+        lineHeight = 1.2;
+    }// vscode line height default settings
+
+    const height = Math.ceil(15 / lineHeight);
+    
+    // ensure that the InstLine is within the current visible range
+    const candidate = positionConfig === 'bottom'
+        ? endInfo.insertPosition.line
+        : beginInfo.insertPosition.line - height;
+
+    const lowerBound = StartLine + 1;
+    const upperBound = EndLine - height;
+
+    const InstLine = Math.min(Math.max(candidate, lowerBound), upperBound);
+
+    const previewPosition =new vscode.Position(InstLine, endInfo.insertPosition.character - endInfo.match?.matchStr?.length ?? 0);
     pushPreview(mathExpression, testScope.isDisplayMath, previewPosition);
 }
 

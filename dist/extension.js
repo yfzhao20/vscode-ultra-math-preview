@@ -64608,11 +64608,17 @@ var require_math_preview = __commonJS({
       mathExpression = macrosString + mathExpression;
       const visibleRanges = vscode2.window.activeTextEditor.visibleRanges[0];
       const StartLine = visibleRanges.start.line;
-      const endLine = visibleRanges.end.line;
-      let UpperBoundLine, LowerBoundLine;
-      UpperBoundLine = Math.max(StartLine, endInfo.insertPosition.line) + 5;
-      LowerBoundLine = Math.min(endLine, endInfo.insertPosition.line) - 10;
-      const previewPosition = positionConfig === "bottom" && testScope.isDisplayMath ? new vscode2.Position(LowerBoundLine, endInfo.insertPosition.character - endInfo.match?.matchStr?.length) : UpperBoundLine;
+      const EndLine = visibleRanges.end.line;
+      let lineHeight = vscode2.workspace.getConfiguration("editor", null).get("lineHeight");
+      if (lineHeight === 0 || lineHeight === void 0 || lineHeight === null) {
+        lineHeight = 1.2;
+      }
+      const height = Math.ceil(15 / lineHeight);
+      const candidate = positionConfig === "bottom" ? endInfo.insertPosition.line : beginInfo.insertPosition.line - height;
+      const lowerBound = StartLine + 1;
+      const upperBound = EndLine - height;
+      const InstLine = Math.min(Math.max(candidate, lowerBound), upperBound);
+      const previewPosition = new vscode2.Position(InstLine, endInfo.insertPosition.character - endInfo.match?.matchStr?.length);
       pushPreview(mathExpression, testScope.isDisplayMath, previewPosition);
     }
     function pushPreview(mathExpression, isBlock, previewPosition) {

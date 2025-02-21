@@ -58,4 +58,9 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 - [x] Fix alignment bug
 
 ## Debugging
-- 
+- Install node.js(Version 18.0.0 recommended)
+    Run `node -v` and `npm -v` to confirm the version.
+- Run `npm run install` in the terminal to install `devDependencies` in the package.json.
+    Version 3.2.0 is recommended for mathjax-full. Otherwise, an error message will be reported:TypeError: Cannot set property RequireLoad of #<Object> which has only a getter.
+- Run `npm run esbuild-watch`in the terminal.
+- Open `./dist/extension.js` and press F5(`.vscode/launch.json` needs to be configured in advance).
