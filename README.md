@@ -47,8 +47,11 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
     - to get TextMate scope of text.
     - now you can uninstall *draivin.hscopes* (**HyperScopes**) if no extension depends on that.
  
-## Todo
+## Known Isseus
+- Regarding the horizontal instability of the preview window.
+    When **Automatically adjust preview position** is enabled, the preview window can not not exceed the text position boundaries. In contexts with excessive indentation or empty lines, the preview window may exhibit lateral oscillations (left-right swaying). Setting **position: absolute** for the **defaultCss** variable in the file `"./src/math-preview.js"` fails to resolve this issue, while alternative configurations like **fixed**  cannot guarantee stable preview performance under normal conditions.
 
+## Todo
 
 - [ ] Add `cursor` to "Position"(`umath.preview.position`) options.
 - [x] Automatically adjust preview position.

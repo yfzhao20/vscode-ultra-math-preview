@@ -106,6 +106,13 @@ function setPreview(document, position) {
     if (testScope.isDisplayMath && testScope.scope.indexOf("quote") !== -1)
         mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g, "")
 
+    texRenderer[rendererConfig](mathExpression, testScope.isDisplayMath)
+        .then((svgString) => {
+            return svgString.includes("error") ? undefined : svgString;
+        });
+    const svgHeight = getSvgHeight(svgString)
+    console.log(svgHeight)
+
     // push macros
     mathExpression = macrosString + mathExpression;
 
@@ -130,8 +137,8 @@ function setPreview(document, position) {
         const fontSize = vscode.workspace.getConfiguration('editor').get('fontSize');
         Height = MaxHeightValue / fontSize;
     } else {
-        console.log('UNIT is not recognized')
-        Height = 15;
+        console.log('Units are not matched')
+        Height = 30;
     }
 
     const lineHeight = Math.ceil(MaxHeightValue / lineHeightConfig);
@@ -264,6 +271,23 @@ function getMaxHeightValueAndUnit(cssString) {
         MaxHeightValue: parseFloat(match[1]),
         Unit: match[2].toLowerCase()
     };
+}
+
+function getSvgHeight(svgString) {
+    // 解析显式 height 属性（如：height="100"）
+    const heightMatch = svgString.match(/height\s*=\s*["']([^%]+?)["']/i);
+    if (heightMatch) {
+        return parseFloat(heightMatch[1]); // 返回数值（如 100）
+    }
+
+    // 如果无 height，尝试解析 viewBox 的高度（第四个值）
+    const viewBoxMatch = svgString.match(/viewBox\s*=\s*["']\d+\s+\d+\s+(\d+)\s+(\d+)["']/i);
+    if (viewBoxMatch) {
+        return parseFloat(viewBoxMatch[2]); // 返回 viewBox 高度（如 200）
+    }
+
+    // 如果均未找到，返回默认值或抛出错误
+    return 15;
 }
 /////////////////////////////////////////////////////////
 

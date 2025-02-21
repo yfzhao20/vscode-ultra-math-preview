@@ -64607,6 +64607,11 @@ var require_math_preview = __commonJS({
         return;
       if (testScope.isDisplayMath && testScope.scope.indexOf("quote") !== -1)
         mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g, "");
+      texRenderer[rendererConfig](mathExpression, testScope.isDisplayMath).then((svgString2) => {
+        return svgString2.includes("error") ? void 0 : svgString2;
+      });
+      const svgHeight = getSvgHeight(svgString2);
+      console.log('svgHeight');
       mathExpression = macrosString + mathExpression;
       const visibleRanges = vscode2.window.activeTextEditor.visibleRanges[0];
       const StartLine = visibleRanges.start.line;
@@ -64622,8 +64627,8 @@ var require_math_preview = __commonJS({
         const fontSize = vscode2.workspace.getConfiguration("editor").get("fontSize");
         Height = MaxHeightValue / fontSize;
       } else {
-        console.log("UNIT is not recognized");
-        Height = 15;
+        console.log("Units are not matched");
+        Height = 30;
       }
       const lineHeight = Math.ceil(MaxHeightValue / lineHeightConfig);
       const candidate = positionConfig === "bottom" ? endInfo.insertPosition.line : beginInfo.insertPosition.line - lineHeight;
@@ -64634,10 +64639,10 @@ var require_math_preview = __commonJS({
       pushPreview(mathExpression, testScope.isDisplayMath, previewPosition);
     }
     function pushPreview(mathExpression, isBlock, previewPosition) {
-      texRenderer[rendererConfig](mathExpression, isBlock).then((svgString) => {
-        if (svgString.includes("error"))
+      texRenderer[rendererConfig](mathExpression, isBlock).then((svgString2) => {
+        if (svgString2.includes("error"))
           return;
-        let mathPreview2 = createPreview(svgString);
+        let mathPreview2 = createPreview(svgString2);
         vscode2.commands.executeCommand("setContext", "umathShowPreview", true);
         decorationArray.push(mathPreview2);
         vscode2.window.activeTextEditor.setDecorations(mathPreview2, [new vscode2.Range(previewPosition, previewPosition)]);
@@ -64657,7 +64662,7 @@ var require_math_preview = __commonJS({
     function createPreview(mathString) {
       const stringColor = vscode2.window.activeColorTheme.kind === vscode2.ColorThemeKind.Dark || vscode2.window.activeColorTheme.kind === vscode2.ColorThemeKind.HighContrast ? "#fff" : "#111";
       mathString = mathString.replace(/(?<=style\s*=\s*)"/, `"color:${stringColor};`).split("#").join("%23").replace(/<mjx-container[^<]*><svg/, "<svg").replace("</mjx-container>", "");
-      const defaultCss = `content: url('data:image/svg+xml;utf8,${mathString}');        position: fixed;        padding: 0.5em;        ${positionConfig === "top" ? "bottom" : "top"}: 1.15em;        display: inline-block;        z-index: 1;        pointer-events: none;        background-color: var(--vscode-editor-background);        border: 0.5px solid var(--vscode-editorWidget-border);` + defaultMaxHeight + cssConfig;
+      const defaultCss = `content: url('data:image/svg+xml;utf8,${mathString}');        position: absolute;        padding: 0.5em;        ${positionConfig === "top" ? "bottom" : "top"}: 1.15em;        display: inline-block;        z-index: 1;        pointer-events: none;        background-color: var(--vscode-editor-background);        border: 0.5px solid var(--vscode-editorWidget-border);` + defaultMaxHeight + cssConfig;
       return vscode2.window.createTextEditorDecorationType({
         before: {
           contentText: "",
@@ -64691,6 +64696,17 @@ var require_math_preview = __commonJS({
         MaxHeightValue: parseFloat(match[1]),
         Unit: match[2].toLowerCase()
       };
+    }
+    function getSvgHeight(svgString2) {
+      const heightMatch = svgString2.match(/height\s*=\s*["']([^%]+?)["']/i);
+      if (heightMatch) {
+        return parseFloat(heightMatch[1]);
+      }
+      const viewBoxMatch = svgString2.match(/viewBox\s*=\s*["']\d+\s+\d+\s+(\d+)\s+(\d+)["']/i);
+      if (viewBoxMatch) {
+        return parseFloat(viewBoxMatch[2]);
+      }
+      return 15;
     }
     function clearPreview() {
       for (let thisDeco of decorationArray)
