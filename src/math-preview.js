@@ -20,6 +20,9 @@ let cssConfig = vscode.workspace.getConfiguration().get('umath.preview.customCSS
 let onError = false;
 let resetError = false;
 let e_temp;
+let Height;
+
+const defaultMaxHeight = 'max-height: 45em;'
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -38,14 +41,14 @@ function activate(context) {
             const editor = vscode?.window?.activeTextEditor;
             setPreview(editor?.document, editor?.selection?.active);
         }),
-        
+
         vscode.window.onDidChangeActiveTextEditor((e) => { enablePreview && e && (macrosString = getMacros(e?.document, macroConfig)?.join('\n') ?? "") }),
         vscode.window.onDidChangeTextEditorSelection((e) => {
-            enablePreview && e && setPreview(e?.textEditor?.document, e?.selections[0]?.active); 
+            enablePreview && e && setPreview(e?.textEditor?.document, e?.selections[0]?.active);
             e_temp = e;
         }),
         vscode.window.onDidChangeTextEditorVisibleRanges((e) => {
-            enablePreview &&e&& setPreview(e_temp?.textEditor?.document, e_temp?.selections[0]?.active)
+            enablePreview && e && setPreview(e_temp?.textEditor?.document, e_temp?.selections[0]?.active)
         }),
 
         vscode.workspace.onDidChangeConfiguration((e) => {
@@ -111,22 +114,35 @@ function setPreview(document, position) {
     const StartLine = visibleRanges.start.line;
     const EndLine = visibleRanges.end.line;
 
-    // get vscode workspace line height
-    let lineHeight = vscode.workspace.getConfiguration('editor', null).get('lineHeight');
+    // get vscode workspace line height Configuration
+    let lineHeightConfig = vscode.workspace.getConfiguration('editor').get('lineHeight');
 
-    if (lineHeight === 0 || lineHeight === undefined || lineHeight === null) {
-        lineHeight = 1.2;
+    if (lineHeightConfig === 0 || lineHeightConfig === undefined || lineHeightConfig === null) {
+        lineHeightConfig = 1.2;
     }// vscode line height default settings
 
-    const height = Math.ceil(15 / lineHeight);
-    
+    const { MaxHeightValue, Unit } = getMaxHeightValueAndUnit(defaultMaxHeight+cssConfig);
+
+    // Unit only supports 'em' and 'px'
+    if (Unit == 'em') {
+        Height = MaxHeightValue;
+    } else if (Unit == 'px') {
+        const fontSize = vscode.workspace.getConfiguration('editor').get('fontSize');
+        Height = MaxHeightValue / fontSize;
+    } else {
+        console.log('UNIT is not recognized')
+        Height = 15;
+    }
+
+    const lineHeight = Math.ceil(MaxHeightValue / lineHeightConfig);
+
     // ensure that the InstLine is within the current visible range
     const candidate = positionConfig === 'bottom'
         ? endInfo.insertPosition.line
-        : beginInfo.insertPosition.line - height;
+        : beginInfo.insertPosition.line - lineHeight;
 
     const lowerBound = StartLine + 1;
-    const upperBound = EndLine - height;
+    const upperBound = EndLine - lineHeight;
 
     const InstLine = Math.min(Math.max(candidate, lowerBound), upperBound);
 
@@ -192,7 +208,7 @@ function createPreview(mathString) {
         pointer-events: none;\
         background-color: var(--vscode-editor-background);\
         border: 0.5px solid var(--vscode-editorWidget-border);`
-        + cssConfig
+    +defaultMaxHeight + cssConfig
 
     return vscode.window.createTextEditorDecorationType({
         before: {
@@ -204,6 +220,51 @@ function createPreview(mathString) {
     })
 }
 
+/**
+ * Parses and extracts the effective max-height value and unit from a CSS string
+ * @param {string} cssString - CSS declaration string containing multiple rules
+ * @returns { {MaxHeightValue: number, Unit: string} | null } - Parsed value/unit 
+ * object, returns null if no valid value found. Supported units: em/rem/px/%/vw/
+ * vh
+ * @example
+ * Returns { MaxHeightValue: 64, Unit: "px" }
+ * getMaxHeightValueAndUnit("max-height: 80vh; max-height: 64px !important;")
+ */
+function getMaxHeightValueAndUnit(cssString) {
+    // 1. Extract and parse all max-height declarations
+    const declarations = cssString
+        .split(/;(?![^(]*\))/)
+        .map(rule => rule.trim())
+        .filter(rule => /^max-height\s*:/i.test(rule))
+        .map((rule, index) => {
+            const [, value] = rule.split(/:\s*/i);
+            const isImportant = /\b!important\s*$/i.test(value);
+            const cleanValue = value.replace(/\s*!important\s*$/i, '').trim();
+            return {
+                value: cleanValue,
+                priority: isImportant ? 1 : 0,
+                index
+            };
+        });
+
+    if (!declarations.length) return null;
+
+    // 2. Sort by priority and order of occurrence
+    declarations.sort((a, b) =>
+        b.priority - a.priority || b.index - a.index
+    );
+
+    // 3. Parse the units and numeric values of valid values
+    const value = declarations[0].value;
+    const match = value.match(/^([+-]?(?:\d*\.)?\d+)(rem|em|px|%|vw|vh)$/i);
+
+    if (!match) return null;
+
+    return {
+        MaxHeightValue: parseFloat(match[1]),
+        Unit: match[2].toLowerCase()
+    };
+}
 /////////////////////////////////////////////////////////
 
 function clearPreview() {

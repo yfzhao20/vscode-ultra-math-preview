@@ -64544,6 +64544,8 @@ var require_math_preview = __commonJS({
     var onError = false;
     var resetError = false;
     var e_temp;
+    var Height;
+    var defaultMaxHeight = "max-height: 45em;";
     function activate2(context) {
       macrosString = getMacros(vscode2.window?.activeTextEditor?.document, macroConfig)?.join("\n") ?? "";
       enablePreview = vscode2.workspace.getConfiguration().get("umath.preview.enableMathPreview");
@@ -64609,14 +64611,24 @@ var require_math_preview = __commonJS({
       const visibleRanges = vscode2.window.activeTextEditor.visibleRanges[0];
       const StartLine = visibleRanges.start.line;
       const EndLine = visibleRanges.end.line;
-      let lineHeight = vscode2.workspace.getConfiguration("editor", null).get("lineHeight");
-      if (lineHeight === 0 || lineHeight === void 0 || lineHeight === null) {
-        lineHeight = 1.2;
+      let lineHeightConfig = vscode2.workspace.getConfiguration("editor").get("lineHeight");
+      if (lineHeightConfig === 0 || lineHeightConfig === void 0 || lineHeightConfig === null) {
+        lineHeightConfig = 1.2;
       }
-      const height = Math.ceil(15 / lineHeight);
-      const candidate = positionConfig === "bottom" ? endInfo.insertPosition.line : beginInfo.insertPosition.line - height;
+      const { MaxHeightValue, Unit } = getMaxHeightValueAndUnit(defaultMaxHeight + cssConfig);
+      if (Unit == "em") {
+        Height = MaxHeightValue;
+      } else if (Unit == "px") {
+        const fontSize = vscode2.workspace.getConfiguration("editor").get("fontSize");
+        Height = MaxHeightValue / fontSize;
+      } else {
+        console.log("UNIT is not recognized");
+        Height = 15;
+      }
+      const lineHeight = Math.ceil(MaxHeightValue / lineHeightConfig);
+      const candidate = positionConfig === "bottom" ? endInfo.insertPosition.line : beginInfo.insertPosition.line - lineHeight;
       const lowerBound = StartLine + 1;
-      const upperBound = EndLine - height;
+      const upperBound = EndLine - lineHeight;
       const InstLine = Math.min(Math.max(candidate, lowerBound), upperBound);
       const previewPosition = new vscode2.Position(InstLine, endInfo.insertPosition.character - endInfo.match?.matchStr?.length);
       pushPreview(mathExpression, testScope.isDisplayMath, previewPosition);
@@ -64645,7 +64657,7 @@ var require_math_preview = __commonJS({
     function createPreview(mathString) {
       const stringColor = vscode2.window.activeColorTheme.kind === vscode2.ColorThemeKind.Dark || vscode2.window.activeColorTheme.kind === vscode2.ColorThemeKind.HighContrast ? "#fff" : "#111";
       mathString = mathString.replace(/(?<=style\s*=\s*)"/, `"color:${stringColor};`).split("#").join("%23").replace(/<mjx-container[^<]*><svg/, "<svg").replace("</mjx-container>", "");
-      const defaultCss = `content: url('data:image/svg+xml;utf8,${mathString}');        position: absolute;        padding: 0.5em;        ${positionConfig === "top" ? "bottom" : "top"}: 1.15em;        display: inline-block;        z-index: 1;        pointer-events: none;        background-color: var(--vscode-editor-background);        border: 0.5px solid var(--vscode-editorWidget-border);` + cssConfig;
+      const defaultCss = `content: url('data:image/svg+xml;utf8,${mathString}');        position: fixed;        padding: 0.5em;        ${positionConfig === "top" ? "bottom" : "top"}: 1.15em;        display: inline-block;        z-index: 1;        pointer-events: none;        background-color: var(--vscode-editor-background);        border: 0.5px solid var(--vscode-editorWidget-border);` + defaultMaxHeight + cssConfig;
       return vscode2.window.createTextEditorDecorationType({
         before: {
           contentText: "",
@@ -64654,6 +64666,31 @@ var require_math_preview = __commonJS({
         textDecoration: `none; position: relative;`,
         rangeBehavior: vscode2.DecorationRangeBehavior.ClosedClosed
       });
+    }
+    function getMaxHeightValueAndUnit(cssString) {
+      const declarations = cssString.split(/;(?![^(]*\))/).map((rule) => rule.trim()).filter((rule) => /^max-height\s*:/i.test(rule)).map((rule, index) => {
+        const [, value2] = rule.split(/:\s*/i);
+        const isImportant = /\b!important\s*$/i.test(value2);
+        const cleanValue = value2.replace(/\s*!important\s*$/i, "").trim();
+        return {
+          value: cleanValue,
+          priority: isImportant ? 1 : 0,
+          index
+        };
+      });
+      if (!declarations.length)
+        return null;
+      declarations.sort(
+        (a, b) => b.priority - a.priority || b.index - a.index
+      );
+      const value = declarations[0].value;
+      const match = value.match(/^([+-]?(?:\d*\.)?\d+)(rem|em|px|%|vw|vh)$/i);
+      if (!match)
+        return null;
+      return {
+        MaxHeightValue: parseFloat(match[1]),
+        Unit: match[2].toLowerCase()
+      };
     }
     function clearPreview() {
       for (let thisDeco of decorationArray)
