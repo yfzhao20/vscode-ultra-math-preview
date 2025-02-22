@@ -50,6 +50,8 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 ## Known Isseus
 - Regarding the horizontal instability of the preview window.
     When **Automatically adjust preview position** is enabled, the preview window can not not exceed the text position boundaries. In contexts with excessive indentation or empty lines, the preview window may exhibit lateral oscillations (left-right swaying). Setting **position: absolute** for the **defaultCss** variable in the file `"./src/math-preview.js"` fails to resolve this issue, while alternative configurations like **fixed**  cannot guarantee stable preview performance under normal conditions.
+- Automatically adjusting the preview window affects performance?
+    The preview window will be re-rendered every time the window is scrolled, which will inevitably have an impact on performance. However everyone's computer hardware configuration is different, and you need to decide whether to turn it on or not according to the actual situation. Honestly, the code can still be optimized further:).
 
 ## Todo
 
@@ -74,4 +76,4 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 - Open `./dist/extension.js` and press F5 (`".vscode/launch.json"` needs to be configured in advance).
 
 ## Acknowledgement
-- Part of the code is generated based on the `DeepSeek-Coder`,such as the function `getMaxHeightValueAndUnit` in the `"./src/math-preview.js"`
+- Part of the code is generated based on the `DeepSeek-Coder`,such as the function `getMaxHeightValueAndUnit` in the `"./src/util/autoPreviewPosition.js`
