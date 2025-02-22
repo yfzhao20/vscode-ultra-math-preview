@@ -123,15 +123,15 @@ function setPreview(document, position) {
 
     const { MaxHeightValue, Unit } = getMaxHeightValueAndUnit(defaultMaxHeight + cssConfig);
 
-    renderAndGetHeightInEm().then(height => {
+    renderAndGetHeightInEm(mathExpression, testScope).then(height => {
         if (height == 'undefined') return
 
         // Unit only supports 'em' and 'px'
         if (Unit == 'em') {
-            Height = Math.min(MaxHeightValue, svgHeight);
+            Height = Math.min(MaxHeightValue, height);
         } else if (Unit == 'px') {
             const fontSize = vscode.workspace.getConfiguration('editor').get('fontSize');
-            Height = Math.min(MaxHeightValue / fontSize, svgHeight);
+            Height = Math.min(MaxHeightValue / fontSize, height);
         } else {
             console.log('Units are not matched')
             Height = 30;
@@ -140,7 +140,7 @@ function setPreview(document, position) {
         console.error("Error rendering SVG:", error);
     })
 
-    const lineHeight = Math.ceil(MaxHeightValue / lineHeightConfig);
+    const lineHeight = Math.ceil(Height / lineHeightConfig);
 
     // ensure that the InstLine is within the current visible range
     const candidate = positionConfig === 'bottom'
@@ -282,7 +282,7 @@ function getMaxHeightValueAndUnit(cssString) {
  * @returns {number|undefined} The SVG's height in `em` units (rounded up)
  *                             or undefined if an error occurs during rendering.
  */
-async function renderAndGetHeightInEm() {
+async function renderAndGetHeightInEm(mathExpression, testScope) {
     let svgHeightInEm;
     try {
         const svgString_temp = await texRenderer[rendererConfig](mathExpression, testScope.isDisplayMath);
