@@ -64596,8 +64596,7 @@ var require_math_preview = __commonJS({
     var { getMathScope } = require_get_scopes();
     var {
       getMaxHeightValueAndUnit,
-      renderAndGetHeightInEm,
-      getSvgHeight
+      renderAndGetHeightInEm
     } = require_autoPreviewPosition();
     var { jumpToBeginPosition, jumpToEndPosition, getBegin, getEnd } = require_get_delimiter_position();
     var decorationArray = [];
@@ -64736,7 +64735,7 @@ var require_math_preview = __commonJS({
     function createPreview(mathString) {
       const stringColor = vscode2.window.activeColorTheme.kind === vscode2.ColorThemeKind.Dark || vscode2.window.activeColorTheme.kind === vscode2.ColorThemeKind.HighContrast ? "#fff" : "#111";
       mathString = mathString.replace(/(?<=style\s*=\s*)"/, `"color:${stringColor};`).split("#").join("%23").replace(/<mjx-container[^<]*><svg/, "<svg").replace("</mjx-container>", "");
-      const defaultCss = `content: url('data:image/svg+xml;utf8,${mathString}');        position: absolute;        padding: 0.5em;        ${positionConfig === "top" ? "bottom" : "top"}: 1.15em;        display: inline-block;        z-index: 1;        pointer-events: none;        background-color: var(--vscode-editor-background);        border: 0.5px solid var(--vscode-editorWidget-border);` + defaultMaxHeight + cssConfig;
+      const defaultCss = `content: url('data:image/svg+xml;utf8,${mathString}');        position: absolute;        padding: 0.5em;        ${positionConfig === "top" ? "bottom" : "top"}: 1.15em;        display: inline-block;        z-index: 1;        pointer-events: auto;        background-color: var(--vscode-editor-background);        border: 0.5px solid var(--vscode-editorWidget-border);` + defaultMaxHeight + cssConfig;
       return vscode2.window.createTextEditorDecorationType({
         before: {
           contentText: "",

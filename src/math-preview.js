@@ -6,8 +6,7 @@ const texRenderer = require('./texRenderer')
 const { getMathScope } = require('./util/get-scopes')
 const {
     getMaxHeightValueAndUnit,
-    renderAndGetHeightInEm,
-    getSvgHeight
+    renderAndGetHeightInEm
 } = require('./util/autoPreviewPosition');
 const { jumpToBeginPosition, jumpToEndPosition, getBegin, getEnd } = require('./util/get-delimiter-position')
 
@@ -223,7 +222,7 @@ function createPreview(mathString) {
         ${positionConfig === 'top' ? 'bottom' : 'top'}: 1.15em;\
         display: inline-block;\
         z-index: 1;\
-        pointer-events: none;\
+        pointer-events: auto;\
         background-color: var(--vscode-editor-background);\
         border: 0.5px solid var(--vscode-editorWidget-border);`
         + defaultMaxHeight + cssConfig
