@@ -106,13 +106,6 @@ function setPreview(document, position) {
     if (testScope.isDisplayMath && testScope.scope.indexOf("quote") !== -1)
         mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g, "")
 
-    texRenderer[rendererConfig](mathExpression, testScope.isDisplayMath)
-        .then((svgString) => {
-            return svgString.includes("error") ? undefined : svgString;
-        });
-    const svgHeight = getSvgHeight(svgString)
-    console.log(svgHeight)
-
     // push macros
     mathExpression = macrosString + mathExpression;
 
@@ -128,18 +121,24 @@ function setPreview(document, position) {
         lineHeightConfig = 1.2;
     }// vscode line height default settings
 
-    const { MaxHeightValue, Unit } = getMaxHeightValueAndUnit(defaultMaxHeight+cssConfig);
+    const { MaxHeightValue, Unit } = getMaxHeightValueAndUnit(defaultMaxHeight + cssConfig);
 
-    // Unit only supports 'em' and 'px'
-    if (Unit == 'em') {
-        Height = MaxHeightValue;
-    } else if (Unit == 'px') {
-        const fontSize = vscode.workspace.getConfiguration('editor').get('fontSize');
-        Height = MaxHeightValue / fontSize;
-    } else {
-        console.log('Units are not matched')
-        Height = 30;
-    }
+    renderAndGetHeightInEm().then(height => {
+        if (height == 'undefined') return
+
+        // Unit only supports 'em' and 'px'
+        if (Unit == 'em') {
+            Height = Math.min(MaxHeightValue, svgHeight);
+        } else if (Unit == 'px') {
+            const fontSize = vscode.workspace.getConfiguration('editor').get('fontSize');
+            Height = Math.min(MaxHeightValue / fontSize, svgHeight);
+        } else {
+            console.log('Units are not matched')
+            Height = 30;
+        }
+    }).catch(error => {
+        console.error("Error rendering SVG:", error);
+    })
 
     const lineHeight = Math.ceil(MaxHeightValue / lineHeightConfig);
 
@@ -153,7 +152,7 @@ function setPreview(document, position) {
 
     const InstLine = Math.min(Math.max(candidate, lowerBound), upperBound);
 
-    const previewPosition =new vscode.Position(InstLine, endInfo.insertPosition.character - endInfo.match?.matchStr?.length ?? 0);
+    const previewPosition = new vscode.Position(InstLine, endInfo.insertPosition.character - endInfo.match?.matchStr?.length ?? 0);
     pushPreview(mathExpression, testScope.isDisplayMath, previewPosition);
 }
 
@@ -215,7 +214,7 @@ function createPreview(mathString) {
         pointer-events: none;\
         background-color: var(--vscode-editor-background);\
         border: 0.5px solid var(--vscode-editorWidget-border);`
-    +defaultMaxHeight + cssConfig
+        + defaultMaxHeight + cssConfig
 
     return vscode.window.createTextEditorDecorationType({
         before: {
@@ -273,21 +272,42 @@ function getMaxHeightValueAndUnit(cssString) {
     };
 }
 
+/**
+ * Asynchronously renders a mathematical expression to an SVG string,
+ * converts the SVG's height from `ex` units to `em` units (assuming a 1:2 ratio),
+ * and returns the rounded up result.
+ *
+ * @async
+ * @function renderAndGetHeightInEm
+ * @returns {number|undefined} The SVG's height in `em` units (rounded up)
+ *                             or undefined if an error occurs during rendering.
+ */
+async function renderAndGetHeightInEm() {
+    let svgHeightInEm;
+    try {
+        const svgString_temp = await texRenderer[rendererConfig](mathExpression, testScope.isDisplayMath);
+        if (!svgString_temp.includes("error")) {
+            /**
+             * Assumes the SVG height is given in `ex` units and converts it to `em` units
+             * by dividing by 2 (since 1 `em` is assumed to be twice the size of 1 `ex` here).
+             * The result is then rounded up using Math.ceil to ensure it is a whole number.
+             */
+            svgHeightInEm = Math.ceil(getSvgHeight(svgString_temp) / 2);
+        }
+    } catch (error) {
+        console.error("Error rendering SVG:", error);
+    }
+    return svgHeightInEm;
+}
+
 function getSvgHeight(svgString) {
-    // 解析显式 height 属性（如：height="100"）
+    // Resolve the explicit height property
     const heightMatch = svgString.match(/height\s*=\s*["']([^%]+?)["']/i);
     if (heightMatch) {
-        return parseFloat(heightMatch[1]); // 返回数值（如 100）
+        return parseFloat(heightMatch[1]); //
     }
-
-    // 如果无 height，尝试解析 viewBox 的高度（第四个值）
-    const viewBoxMatch = svgString.match(/viewBox\s*=\s*["']\d+\s+\d+\s+(\d+)\s+(\d+)["']/i);
-    if (viewBoxMatch) {
-        return parseFloat(viewBoxMatch[2]); // 返回 viewBox 高度（如 200）
-    }
-
-    // 如果均未找到，返回默认值或抛出错误
-    return 15;
+    // If not found, return the default value
+    return 24;
 }
 /////////////////////////////////////////////////////////
 
