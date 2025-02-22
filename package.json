@@ -72,6 +72,11 @@
             "default": true,
             "description": "Show math preview."
           },
+          "umath.preview.AutoAdjustPreviewPosition": {
+            "type": "boolean",
+            "default": true,
+            "description": "Automatically adjusts the position of the preview window."
+          },
           "umath.preview.position": {
             "type": "string",
             "enum": [

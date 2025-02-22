@@ -4,6 +4,11 @@ const vscode = require('vscode')
 const { getMacros } = require('./get-macros')
 const texRenderer = require('./texRenderer')
 const { getMathScope } = require('./util/get-scopes')
+const {
+    getMaxHeightValueAndUnit,
+    renderAndGetHeightInEm,
+    getSvgHeight
+} = require('./util/autoPreviewPosition');
 const { jumpToBeginPosition, jumpToEndPosition, getBegin, getEnd } = require('./util/get-delimiter-position')
 
 // init
@@ -11,6 +16,7 @@ let decorationArray = [];
 let macrosString = "";
 let macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros")
 let enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
+let IsAutoAdjustPosi = vscode.workspace.getConfiguration().get('umath.preview.AutoAdjustPreviewPosition')
 let positionConfig = vscode.workspace.getConfiguration().get('umath.preview.position')
 let rendererConfig = vscode.workspace.getConfiguration().get('umath.preview.renderer')
 let cssConfig = vscode.workspace.getConfiguration().get('umath.preview.customCSS')?.join('')
@@ -48,12 +54,13 @@ function activate(context) {
             e_temp = e;
         }),
         vscode.window.onDidChangeTextEditorVisibleRanges((e) => {
-            enablePreview && e && setPreview(e_temp?.textEditor?.document, e_temp?.selections[0]?.active)
+            enablePreview && IsAutoAdjustPosi && e && setPreview(e_temp?.textEditor?.document, e_temp?.selections[0]?.active)
         }),
 
         vscode.workspace.onDidChangeConfiguration((e) => {
             e && e.affectsConfiguration("umath.preview.macros") && (macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros"));
             e && e.affectsConfiguration("umath.preview.position") && (positionConfig = vscode.workspace.getConfiguration().get('umath.preview.position'));
+            e && e.affectsConfiguration("umath.preview.AutoAdjustPreviewPosition") && (positionConfig = vscode.workspace.getConfiguration().get('umath.preview.AutoAdjustPreviewPosition'));
             e && e.affectsConfiguration("umath.preview.renderer") && (rendererConfig = vscode.workspace.getConfiguration().get('umath.preview.renderer'));
             e && e.affectsConfiguration("umath.preview.enableMathPreview") && (enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview'));
             e && e.affectsConfiguration("umath.preview.customCSS") && (cssConfig = vscode.workspace.getConfiguration().get('umath.preview.customCSS')?.join(''));
@@ -123,7 +130,12 @@ function setPreview(document, position) {
 
     const { MaxHeightValue, Unit } = getMaxHeightValueAndUnit(defaultMaxHeight + cssConfig);
 
-    renderAndGetHeightInEm(mathExpression, testScope).then(height => {
+    renderAndGetHeightInEm(
+        mathExpression,
+        testScope.isDisplayMath,
+        texRenderer,
+        rendererConfig
+    ).then(height => {
         if (height == 'undefined') return
 
         // Unit only supports 'em' and 'px'
@@ -226,89 +238,7 @@ function createPreview(mathString) {
     })
 }
 
-/**
- * Parses and extracts the effective max-height value and unit from a CSS string
- * @param {string} cssString - CSS declaration string containing multiple rules
- * @returns { {MaxHeightValue: number, Unit: string} | null } - Parsed value/unit 
- * object, returns null if no valid value found. Supported units: em/rem/px/%/vw/
- * vh
- * @example
- * Returns { MaxHeightValue: 64, Unit: "px" }
- * getMaxHeightValueAndUnit("max-height: 80vh; max-height: 64px !important;")
- */
-function getMaxHeightValueAndUnit(cssString) {
-    // 1. Extract and parse all max-height declarations
-    const declarations = cssString
-        .split(/;(?![^(]*\))/)
-        .map(rule => rule.trim())
-        .filter(rule => /^max-height\s*:/i.test(rule))
-        .map((rule, index) => {
-            const [, value] = rule.split(/:\s*/i);
-            const isImportant = /\b!important\s*$/i.test(value);
-            const cleanValue = value.replace(/\s*!important\s*$/i, '').trim();
-            return {
-                value: cleanValue,
-                priority: isImportant ? 1 : 0,
-                index
-            };
-        });
 
-    if (!declarations.length) return null;
-
-    // 2. Sort by priority and order of occurrence
-    declarations.sort((a, b) =>
-        b.priority - a.priority || b.index - a.index
-    );
-
-    // 3. Parse the units and numeric values of valid values
-    const value = declarations[0].value;
-    const match = value.match(/^([+-]?(?:\d*\.)?\d+)(rem|em|px|%|vw|vh)$/i);
-
-    if (!match) return null;
-
-    return {
-        MaxHeightValue: parseFloat(match[1]),
-        Unit: match[2].toLowerCase()
-    };
-}
-
-/**
- * Asynchronously renders a mathematical expression to an SVG string,
- * converts the SVG's height from `ex` units to `em` units (assuming a 1:2 ratio),
- * and returns the rounded up result.
- *
- * @async
- * @function renderAndGetHeightInEm
- * @returns {number|undefined} The SVG's height in `em` units (rounded up)
- *                             or undefined if an error occurs during rendering.
- */
-async function renderAndGetHeightInEm(mathExpression, testScope) {
-    let svgHeightInEm;
-    try {
-        const svgString_temp = await texRenderer[rendererConfig](mathExpression, testScope.isDisplayMath);
-        if (!svgString_temp.includes("error")) {
-            /**
-             * Assumes the SVG height is given in `ex` units and converts it to `em` units
-             * by dividing by 2 (since 1 `em` is assumed to be twice the size of 1 `ex` here).
-             * The result is then rounded up using Math.ceil to ensure it is a whole number.
-             */
-            svgHeightInEm = Math.ceil(getSvgHeight(svgString_temp) / 2);
-        }
-    } catch (error) {
-        console.error("Error rendering SVG:", error);
-    }
-    return svgHeightInEm;
-}
-
-function getSvgHeight(svgString) {
-    // Resolve the explicit height property
-    const heightMatch = svgString.match(/height\s*=\s*["']([^%]+?)["']/i);
-    if (heightMatch) {
-        return parseFloat(heightMatch[1]); //
-    }
-    // If not found, return the default value
-    return 24;
-}
 /////////////////////////////////////////////////////////
 
 function clearPreview() {

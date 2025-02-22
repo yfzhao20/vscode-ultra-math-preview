@@ -64441,6 +64441,67 @@ var require_get_scopes = __commonJS({
   }
 });
 
+// src/util/autoPreviewPosition.js
+var require_autoPreviewPosition = __commonJS({
+  "src/util/autoPreviewPosition.js"(exports2, module85) {
+    "use strict";
+    init_MathJax_shim();
+    var SVG_HEIGHT_REGEX = /height\s*=\s*["']([^%]+?)["']/i;
+    var UNIT_REGEX = /^([+-]?(?:\d*\.)?\d+)(rem|em|px|%|vw|vh)$/i;
+    var MAX_HEIGHT_REGEX = /^max-height\s*:/i;
+    module85.exports = {
+      getMaxHeightValueAndUnit,
+      renderAndGetHeightInEm,
+      getSvgHeight
+    };
+    function getMaxHeightValueAndUnit(cssString) {
+      const declarations = cssString.split(/;(?![^(]*\))/).map((rule) => rule.trim()).filter((rule) => MAX_HEIGHT_REGEX.test(rule)).map((rule, index) => {
+        const [, value2] = rule.split(/:\s*/i);
+        const isImportant = /\b!important\s*$/i.test(value2);
+        const cleanValue = value2.replace(/\s*!important\s*$/i, "").trim();
+        return {
+          value: cleanValue,
+          priority: isImportant ? 1 : 0,
+          index
+        };
+      });
+      if (!declarations.length)
+        return null;
+      declarations.sort(
+        (a, b) => b.priority - a.priority || b.index - a.index
+      );
+      const value = declarations[0].value;
+      const match = value.match(UNIT_REGEX);
+      if (!match)
+        return null;
+      return {
+        MaxHeightValue: parseFloat(match[1]),
+        Unit: match[2].toLowerCase()
+      };
+    }
+    async function renderAndGetHeightInEm(mathExpression, isDisplayMath, texRenderer, rendererConfig) {
+      let svgHeightInEm;
+      try {
+        const svgString = await texRenderer[rendererConfig](mathExpression, isDisplayMath);
+        if (!svgString.includes("error")) {
+          svgHeightInEm = Math.ceil(getSvgHeight(svgString) / 2);
+        }
+      } catch (error) {
+        console.error("Rendering failed:", error);
+      }
+      return svgHeightInEm;
+    }
+    function getSvgHeight(svgString) {
+      const heightMatch = svgString.match(SVG_HEIGHT_REGEX);
+      return heightMatch ? parseFloat(heightMatch[1]) : 24;
+    }
+    function getSvgHeight(svgString) {
+      const heightMatch = svgString.match(SVG_HEIGHT_REGEX);
+      return heightMatch ? parseFloat(heightMatch[1]) : 24;
+    }
+  }
+});
+
 // src/util/get-delimiter-position.js
 var require_get_delimiter_position = __commonJS({
   "src/util/get-delimiter-position.js"(exports2, module85) {
@@ -64533,11 +64594,17 @@ var require_math_preview = __commonJS({
     var { getMacros } = require_get_macros();
     var texRenderer = require_texRenderer();
     var { getMathScope } = require_get_scopes();
+    var {
+      getMaxHeightValueAndUnit,
+      renderAndGetHeightInEm,
+      getSvgHeight
+    } = require_autoPreviewPosition();
     var { jumpToBeginPosition, jumpToEndPosition, getBegin, getEnd } = require_get_delimiter_position();
     var decorationArray = [];
     var macrosString = "";
     var macroConfig = vscode2.workspace.getConfiguration().get("umath.preview.macros");
     var enablePreview = vscode2.workspace.getConfiguration().get("umath.preview.enableMathPreview");
+    var IsAutoAdjustPosi = vscode2.workspace.getConfiguration().get("umath.preview.AutoAdjustPreviewPosition");
     var positionConfig = vscode2.workspace.getConfiguration().get("umath.preview.position");
     var rendererConfig = vscode2.workspace.getConfiguration().get("umath.preview.renderer");
     var cssConfig = vscode2.workspace.getConfiguration().get("umath.preview.customCSS")?.join("");
@@ -64567,11 +64634,12 @@ var require_math_preview = __commonJS({
           e_temp = e;
         }),
         vscode2.window.onDidChangeTextEditorVisibleRanges((e) => {
-          enablePreview && e && setPreview(e_temp?.textEditor?.document, e_temp?.selections[0]?.active);
+          enablePreview && IsAutoAdjustPosi && e && setPreview(e_temp?.textEditor?.document, e_temp?.selections[0]?.active);
         }),
         vscode2.workspace.onDidChangeConfiguration((e) => {
           e && e.affectsConfiguration("umath.preview.macros") && (macroConfig = vscode2.workspace.getConfiguration().get("umath.preview.macros"));
           e && e.affectsConfiguration("umath.preview.position") && (positionConfig = vscode2.workspace.getConfiguration().get("umath.preview.position"));
+          e && e.affectsConfiguration("umath.preview.AutoAdjustPreviewPosition") && (positionConfig = vscode2.workspace.getConfiguration().get("umath.preview.AutoAdjustPreviewPosition"));
           e && e.affectsConfiguration("umath.preview.renderer") && (rendererConfig = vscode2.workspace.getConfiguration().get("umath.preview.renderer"));
           e && e.affectsConfiguration("umath.preview.enableMathPreview") && (enablePreview = vscode2.workspace.getConfiguration().get("umath.preview.enableMathPreview"));
           e && e.affectsConfiguration("umath.preview.customCSS") && (cssConfig = vscode2.workspace.getConfiguration().get("umath.preview.customCSS")?.join(""));
@@ -64616,7 +64684,12 @@ var require_math_preview = __commonJS({
         lineHeightConfig = 1.2;
       }
       const { MaxHeightValue, Unit } = getMaxHeightValueAndUnit(defaultMaxHeight + cssConfig);
-      renderAndGetHeightInEm(mathExpression, testScope).then((height) => {
+      renderAndGetHeightInEm(
+        mathExpression,
+        testScope.isDisplayMath,
+        texRenderer,
+        rendererConfig
+      ).then((height) => {
         if (height == "undefined")
           return;
         if (Unit == "em") {
@@ -64672,50 +64745,6 @@ var require_math_preview = __commonJS({
         textDecoration: `none; position: relative;`,
         rangeBehavior: vscode2.DecorationRangeBehavior.ClosedClosed
       });
-    }
-    function getMaxHeightValueAndUnit(cssString) {
-      const declarations = cssString.split(/;(?![^(]*\))/).map((rule) => rule.trim()).filter((rule) => /^max-height\s*:/i.test(rule)).map((rule, index) => {
-        const [, value2] = rule.split(/:\s*/i);
-        const isImportant = /\b!important\s*$/i.test(value2);
-        const cleanValue = value2.replace(/\s*!important\s*$/i, "").trim();
-        return {
-          value: cleanValue,
-          priority: isImportant ? 1 : 0,
-          index
-        };
-      });
-      if (!declarations.length)
-        return null;
-      declarations.sort(
-        (a, b) => b.priority - a.priority || b.index - a.index
-      );
-      const value = declarations[0].value;
-      const match = value.match(/^([+-]?(?:\d*\.)?\d+)(rem|em|px|%|vw|vh)$/i);
-      if (!match)
-        return null;
-      return {
-        MaxHeightValue: parseFloat(match[1]),
-        Unit: match[2].toLowerCase()
-      };
-    }
-    async function renderAndGetHeightInEm(mathExpression, testScope) {
-      let svgHeightInEm;
-      try {
-        const svgString_temp = await texRenderer[rendererConfig](mathExpression, testScope.isDisplayMath);
-        if (!svgString_temp.includes("error")) {
-          svgHeightInEm = Math.ceil(getSvgHeight(svgString_temp) / 2);
-        }
-      } catch (error) {
-        console.error("Error rendering SVG:", error);
-      }
-      return svgHeightInEm;
-    }
-    function getSvgHeight(svgString) {
-      const heightMatch = svgString.match(/height\s*=\s*["']([^%]+?)["']/i);
-      if (heightMatch) {
-        return parseFloat(heightMatch[1]);
-      }
-      return 24;
     }
     function clearPreview() {
       for (let thisDeco of decorationArray)
