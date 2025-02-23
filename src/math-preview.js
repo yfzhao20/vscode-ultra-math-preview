@@ -10,18 +10,6 @@ const {
 } = require('./util/autoPreviewPosition');
 const { jumpToBeginPosition, jumpToEndPosition, getBegin, getEnd } = require('./util/get-delimiter-position')
 
-// init
-/** 
-let decorationArray = [];
-let macrosString = "";
-let macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros")
-let enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
-let IsAutoAdjustPosi = vscode.workspace.getConfiguration().get('umath.preview.AutoAdjustPreviewPosition')
-let positionConfig = vscode.workspace.getConfiguration().get('umath.preview.position')
-let rendererConfig = vscode.workspace.getConfiguration().get('umath.preview.renderer')
-let cssConfig = vscode.workspace.getConfiguration().get('umath.preview.customCSS')?.join('')
-*/
-
 // 状态管理对象
 const PreviewState = {
     decorationArray: [],
@@ -229,6 +217,8 @@ function setPreview(document, position) {
  * @param {vscode.Position} position 
  * @returns 
  */
+
+/** 
 async function _setPreview(document, position) {
     clearPreview()
     if (!document || !position) return;
@@ -321,6 +311,152 @@ async function _setPreview(document, position) {
 
     const previewPosition = new vscode.Position(InstLine, endInfo.insertPosition.character - endInfo.match?.matchStr?.length ?? 0);
     pushPreview(mathExpression, testScope.isDisplayMath, previewPosition);
+}
+*/
+
+// 工具函数集合
+const PreviewUtils = {
+    // 获取配置项
+    getConfig(section, key, defaultValue) {
+        return vscode.workspace.getConfiguration(section).get(key) ?? defaultValue;
+    },
+
+    // 计算切割范围
+    calculateMathCutRange(beginInfo, endInfo) {
+        const cutBegin = beginInfo.match?.matchStr?.match(MATH_REPLACE_REGEX.delimiter)?.[0]?.length ?? 0;
+        const cutEnd = endInfo.match ? (cutBegin > 2 ? cutBegin - 2 : cutBegin) : 0;
+        return new vscode.Range(
+            beginInfo.insertPosition.line,
+            beginInfo.insertPosition.character + cutBegin,
+            endInfo.insertPosition.line,
+            endInfo.insertPosition.character - cutEnd
+        );
+    },
+
+    // 处理数学表达式内容
+    processMathContent(mathExpression, testScope) {
+        if (testScope.isDisplayMath && testScope.scope.includes("quote")) {
+            return mathExpression.replace(MATH_REPLACE_REGEX.blockquote, "");
+        }
+        return mathExpression;
+    },
+
+    // 计算预览位置
+    calculatePreviewPosition(lineHeightConfig, height, visibleRanges, configPosition, endInfo) {
+        const lineHeight = Math.ceil(height / lineHeightConfig);
+        const candidate = configPosition === 'bottom'
+            ? endInfo.insertPosition.line
+            : endInfo.insertPosition.line - lineHeight;
+
+        return Math.min(
+            Math.max(candidate, visibleRanges.start.line + 1),
+            visibleRanges.end.line - lineHeight
+        );
+    }
+};
+
+// 高度计算器
+class HeightCalculator {
+    static async getRenderHeight(mathExpression, isDisplayMath, renderer) {
+        try {
+            const height = await renderAndGetHeightInEm(
+                mathExpression,
+                isDisplayMath,
+                texRenderer,
+                renderer
+            );
+
+            if (typeof height === 'undefined') return null;
+
+            const { MaxHeightValue, Unit } = this.parseMaxHeight();
+            return this.convertHeightUnit(height, MaxHeightValue, Unit);
+        } catch (error) {
+            console.error("Render error:", error);
+            return null;
+        }
+    }
+
+    static parseMaxHeight() {
+        const css = PreviewState.config.css || '';
+        return getMaxHeightValueAndUnit(defaultMaxHeight + css);
+    }
+
+    static convertHeightUnit(height, maxValue, unit) {
+        const converters = {
+            'em': () => Math.min(maxValue, height),
+            'px': () => {
+                const fontSize = PreviewUtils.getConfig('editor', 'fontSize', 14);
+                return Math.min(maxValue / fontSize, height);
+            },
+            default: () => 30
+        };
+
+        return (converters[unit] || converters.default)();
+    }
+}
+
+async function _setPreview(document, position) {
+    // 前置检查
+    clearPreview();
+    if (!document || !position || PreviewState.error.occurred) return;
+
+    // 获取数学范围
+    const testScope = getCachedMathScope(document, position);
+    if (!isValidMathScope(testScope)) return;
+
+    // 解析数学表达式
+    const { mathExpression, isDisplayMath,endInfo } = processMathExpression(document, testScope,position);
+    if (!mathExpression || mathExpression.match(MATH_REPLACE_REGEX.blankFormula)) return;
+
+    // 计算预览高度
+    const height = await HeightCalculator.getRenderHeight(
+        PreviewState.macrosString + mathExpression,
+        isDisplayMath,
+        PreviewState.config.renderer
+    );
+    if (!height) return;
+
+    // 计算并设置预览位置
+    const lineHeight = PreviewUtils.getConfig('editor', 'lineHeight', 0);
+    const lineHeightConfig = lineHeight === 0 ? 1.2 : lineHeight;
+    const visibleRanges = vscode.window.activeTextEditor.visibleRanges[0];
+    const instLine = PreviewUtils.calculatePreviewPosition(
+        lineHeightConfig,
+        height,
+        visibleRanges,
+        PreviewState.config.position,
+        endInfo
+    );
+
+    finalizePreview(mathExpression, isDisplayMath, instLine, endInfo);
+}
+
+// 辅助方法
+function isValidMathScope(scope) {
+    return scope && !scope.isInBeginDelimiter && !scope.isInEndDelimiter;
+}
+
+function processMathExpression(document, testScope,position) {
+    const beginMath = getBegin(testScope.scope.includes('meta.math.block'), testScope.isDisplayMath);
+    const endMath = getEnd(testScope.scope.includes('meta.math.block'), testScope.isDisplayMath);
+
+    const beginInfo = jumpToBeginPosition(document, position, beginMath);
+    const endInfo = jumpToEndPosition(document, position, endMath);
+
+    const mathRange = PreviewUtils.calculateMathCutRange(beginInfo, endInfo);
+    let mathExpression = document.getText(mathRange);
+
+    return {
+        mathExpression: PreviewUtils.processMathContent(mathExpression, testScope),
+        isDisplayMath: testScope.isDisplayMath,
+        endInfo
+    };
+}
+
+function finalizePreview(expression, isDisplayMath, line, endInfo) {
+    const charPos = endInfo.insertPosition.character - (endInfo.match?.matchStr?.length ?? 0);
+    const previewPosition = new vscode.Position(line, charPos);
+    pushPreview(expression, isDisplayMath, previewPosition);
 }
 
 

@@ -64691,7 +64691,6 @@ var require_math_preview = __commonJS({
     ];
     var onError = false;
     var resetError = false;
-    var Height;
     var defaultMaxHeight = "max-height: 45em;";
     var SVG_REPLACE_REGEX = {
       style: /(?<=style\s*=\s*)"/,
@@ -64731,70 +64730,118 @@ var require_math_preview = __commonJS({
       clearTimeout(renderTimeout);
       renderTimeout = setTimeout(() => _setPreview(document2, position), RENDER_DEBOUNCE);
     }
+    var PreviewUtils = {
+      getConfig(section, key, defaultValue) {
+        return vscode2.workspace.getConfiguration(section).get(key) ?? defaultValue;
+      },
+      calculateMathCutRange(beginInfo, endInfo) {
+        const cutBegin = beginInfo.match?.matchStr?.match(MATH_REPLACE_REGEX.delimiter)?.[0]?.length ?? 0;
+        const cutEnd = endInfo.match ? cutBegin > 2 ? cutBegin - 2 : cutBegin : 0;
+        return new vscode2.Range(
+          beginInfo.insertPosition.line,
+          beginInfo.insertPosition.character + cutBegin,
+          endInfo.insertPosition.line,
+          endInfo.insertPosition.character - cutEnd
+        );
+      },
+      processMathContent(mathExpression, testScope) {
+        if (testScope.isDisplayMath && testScope.scope.includes("quote")) {
+          return mathExpression.replace(MATH_REPLACE_REGEX.blockquote, "");
+        }
+        return mathExpression;
+      },
+      calculatePreviewPosition(lineHeightConfig, height, visibleRanges, configPosition, endInfo) {
+        const lineHeight = Math.ceil(height / lineHeightConfig);
+        const candidate = configPosition === "bottom" ? endInfo.insertPosition.line : endInfo.insertPosition.line - lineHeight;
+        return Math.min(
+          Math.max(candidate, visibleRanges.start.line + 1),
+          visibleRanges.end.line - lineHeight
+        );
+      }
+    };
+    var HeightCalculator = class {
+      static async getRenderHeight(mathExpression, isDisplayMath, renderer) {
+        try {
+          const height = await renderAndGetHeightInEm(
+            mathExpression,
+            isDisplayMath,
+            texRenderer,
+            renderer
+          );
+          if (typeof height === "undefined")
+            return null;
+          const { MaxHeightValue, Unit } = this.parseMaxHeight();
+          return this.convertHeightUnit(height, MaxHeightValue, Unit);
+        } catch (error) {
+          console.error("Render error:", error);
+          return null;
+        }
+      }
+      static parseMaxHeight() {
+        const css = PreviewState.config.css || "";
+        return getMaxHeightValueAndUnit(defaultMaxHeight + css);
+      }
+      static convertHeightUnit(height, maxValue, unit) {
+        const converters = {
+          "em": () => Math.min(maxValue, height),
+          "px": () => {
+            const fontSize = PreviewUtils.getConfig("editor", "fontSize", 14);
+            return Math.min(maxValue / fontSize, height);
+          },
+          default: () => 30
+        };
+        return (converters[unit] || converters.default)();
+      }
+    };
     async function _setPreview(document2, position) {
       clearPreview();
-      if (!document2 || !position)
+      if (!document2 || !position || PreviewState.error.occurred)
         return;
-      if (onError) {
-        resetError && (onError = !onError);
-        resetError = !resetError;
-      }
       const testScope = getCachedMathScope(document2, position);
-      if (!testScope || testScope.isInBeginDelimiter || testScope.isInEndDelimiter)
+      if (!isValidMathScope(testScope))
         return;
+      const { mathExpression, isDisplayMath, endInfo } = processMathExpression(document2, testScope, position);
+      if (!mathExpression || mathExpression.match(MATH_REPLACE_REGEX.blankFormula))
+        return;
+      const height = await HeightCalculator.getRenderHeight(
+        PreviewState.macrosString + mathExpression,
+        isDisplayMath,
+        PreviewState.config.renderer
+      );
+      if (!height)
+        return;
+      const lineHeight = PreviewUtils.getConfig("editor", "lineHeight", 0);
+      const lineHeightConfig = lineHeight === 0 ? 1.2 : lineHeight;
+      const visibleRanges = vscode2.window.activeTextEditor.visibleRanges[0];
+      const instLine = PreviewUtils.calculatePreviewPosition(
+        lineHeightConfig,
+        height,
+        visibleRanges,
+        PreviewState.config.position,
+        endInfo
+      );
+      finalizePreview(mathExpression, isDisplayMath, instLine, endInfo);
+    }
+    function isValidMathScope(scope) {
+      return scope && !scope.isInBeginDelimiter && !scope.isInEndDelimiter;
+    }
+    function processMathExpression(document2, testScope, position) {
       const beginMath = getBegin(testScope.scope.includes("meta.math.block"), testScope.isDisplayMath);
       const endMath = getEnd(testScope.scope.includes("meta.math.block"), testScope.isDisplayMath);
       const beginInfo = jumpToBeginPosition(document2, position, beginMath);
       const endInfo = jumpToEndPosition(document2, position, endMath);
-      const cutBegin = beginInfo.match?.matchStr?.match(MATH_REPLACE_REGEX.delimiter)?.[0]?.length ?? 0;
-      const cutEnd = endInfo.match ? cutBegin > 2 ? cutBegin - 2 : cutBegin : 0;
-      const mathRange = new vscode2.Range(
-        beginInfo.insertPosition.line,
-        beginInfo.insertPosition.character + cutBegin,
-        endInfo.insertPosition.line,
-        endInfo.insertPosition.character - cutEnd
-      );
+      const mathRange = PreviewUtils.calculateMathCutRange(beginInfo, endInfo);
       let mathExpression = document2.getText(mathRange);
-      if (mathExpression.match(MATH_REPLACE_REGEX.blankFormula))
-        return;
-      if (testScope.isDisplayMath && testScope.scope.indexOf("quote") !== -1)
-        mathExpression = mathExpression.replace(MATH_REPLACE_REGEX.blockquote, "");
-      mathExpression = PreviewState.macrosString + mathExpression;
-      const visibleRanges = vscode2.window.activeTextEditor.visibleRanges[0];
-      const StartLine = visibleRanges.start.line;
-      const EndLine = visibleRanges.end.line;
-      let lineHeightConfig = vscode2.workspace.getConfiguration("editor").get("lineHeight");
-      if (lineHeightConfig === 0 || lineHeightConfig === void 0 || lineHeightConfig === null) {
-        lineHeightConfig = 1.2;
-      }
-      const { MaxHeightValue, Unit } = getMaxHeightValueAndUnit(defaultMaxHeight + PreviewState.config.css);
-      renderAndGetHeightInEm(
-        mathExpression,
-        testScope.isDisplayMath,
-        texRenderer,
-        PreviewState.config.renderer
-      ).then((height) => {
-        if (height == "undefined")
-          return;
-        if (Unit == "em") {
-          Height = Math.min(MaxHeightValue, height);
-        } else if (Unit == "px") {
-          const fontSize = vscode2.workspace.getConfiguration("editor").get("fontSize");
-          Height = Math.min(MaxHeightValue / fontSize, height);
-        } else {
-          console.log("Units are not matched");
-          Height = 30;
-        }
-      }).catch((error) => {
-        console.error("Error rendering SVG:", error);
-      });
-      const lineHeight = Math.ceil(Height / lineHeightConfig);
-      const candidate = PreviewState.config.position === "bottom" ? endInfo.insertPosition.line : beginInfo.insertPosition.line - lineHeight;
-      const lowerBound = StartLine + 1;
-      const upperBound = EndLine - lineHeight;
-      const InstLine = Math.min(Math.max(candidate, lowerBound), upperBound);
-      const previewPosition = new vscode2.Position(InstLine, endInfo.insertPosition.character - endInfo.match?.matchStr?.length);
-      pushPreview(mathExpression, testScope.isDisplayMath, previewPosition);
+      return {
+        mathExpression: PreviewUtils.processMathContent(mathExpression, testScope),
+        isDisplayMath: testScope.isDisplayMath,
+        endInfo
+      };
+    }
+    function finalizePreview(expression, isDisplayMath, line, endInfo) {
+      const charPos = endInfo.insertPosition.character - (endInfo.match?.matchStr?.length ?? 0);
+      const previewPosition = new vscode2.Position(line, charPos);
+      pushPreview(expression, isDisplayMath, previewPosition);
     }
     var lastScopeCache = null;
     function getCachedMathScope(document2, position) {
