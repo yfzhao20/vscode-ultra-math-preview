@@ -1,8 +1,13 @@
 "use strict";
 
+// autoPreviewPosition.js
 const SVG_HEIGHT_REGEX = /height\s*=\s*["']([^%]+?)["']/i;
 const UNIT_REGEX = /^([+-]?(?:\d*\.)?\d+)(rem|em|px|%|vw|vh)$/i;
 const MAX_HEIGHT_REGEX = /^max-height\s*:/i;
+const CSS_SPLIT_REGEX = /;(?![^(]*\))/;
+const VALUE_SPLIT_REGEX = /:\s*/i;
+const isImportant_REGEX = /\b!important\s*$/i;
+const cleanValue_REGEX = /\s*!important\s*$/i;
 
 module.exports = {
     getMaxHeightValueAndUnit,
@@ -23,13 +28,13 @@ module.exports = {
 function getMaxHeightValueAndUnit(cssString) {
     // 1. Extract and parse all max-height declarations
     const declarations = cssString
-        .split(/;(?![^(]*\))/)
+        .split(CSS_SPLIT_REGEX)
         .map(rule => rule.trim())
         .filter(rule => MAX_HEIGHT_REGEX.test(rule))
         .map((rule, index) => {
-            const [, value] = rule.split(/:\s*/i);
-            const isImportant = /\b!important\s*$/i.test(value);
-            const cleanValue = value.replace(/\s*!important\s*$/i, '').trim();
+            const [, value] = rule.split(VALUE_SPLIT_REGEX);
+            const isImportant = isImportant_REGEX.test(value);
+            const cleanValue = value.replace(cleanValue_REGEX, '').trim();
             return {
                 value: cleanValue,
                 priority: isImportant ? 1 : 0,

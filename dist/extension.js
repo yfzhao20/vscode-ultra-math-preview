@@ -64449,16 +64449,20 @@ var require_autoPreviewPosition = __commonJS({
     var SVG_HEIGHT_REGEX = /height\s*=\s*["']([^%]+?)["']/i;
     var UNIT_REGEX = /^([+-]?(?:\d*\.)?\d+)(rem|em|px|%|vw|vh)$/i;
     var MAX_HEIGHT_REGEX = /^max-height\s*:/i;
+    var CSS_SPLIT_REGEX = /;(?![^(]*\))/;
+    var VALUE_SPLIT_REGEX = /:\s*/i;
+    var isImportant_REGEX = /\b!important\s*$/i;
+    var cleanValue_REGEX = /\s*!important\s*$/i;
     module85.exports = {
       getMaxHeightValueAndUnit,
       renderAndGetHeightInEm,
       getSvgHeight
     };
     function getMaxHeightValueAndUnit(cssString) {
-      const declarations = cssString.split(/;(?![^(]*\))/).map((rule) => rule.trim()).filter((rule) => MAX_HEIGHT_REGEX.test(rule)).map((rule, index) => {
-        const [, value2] = rule.split(/:\s*/i);
-        const isImportant = /\b!important\s*$/i.test(value2);
-        const cleanValue = value2.replace(/\s*!important\s*$/i, "").trim();
+      const declarations = cssString.split(CSS_SPLIT_REGEX).map((rule) => rule.trim()).filter((rule) => MAX_HEIGHT_REGEX.test(rule)).map((rule, index) => {
+        const [, value2] = rule.split(VALUE_SPLIT_REGEX);
+        const isImportant = isImportant_REGEX.test(value2);
+        const cleanValue = value2.replace(cleanValue_REGEX, "").trim();
         return {
           value: cleanValue,
           priority: isImportant ? 1 : 0,
@@ -64599,54 +64603,135 @@ var require_math_preview = __commonJS({
       renderAndGetHeightInEm
     } = require_autoPreviewPosition();
     var { jumpToBeginPosition, jumpToEndPosition, getBegin, getEnd } = require_get_delimiter_position();
-    var decorationArray = [];
-    var macrosString = "";
-    var macroConfig = vscode2.workspace.getConfiguration().get("umath.preview.macros");
-    var enablePreview = vscode2.workspace.getConfiguration().get("umath.preview.enableMathPreview");
-    var IsAutoAdjustPosi = vscode2.workspace.getConfiguration().get("umath.preview.AutoAdjustPreviewPosition");
-    var positionConfig = vscode2.workspace.getConfiguration().get("umath.preview.position");
-    var rendererConfig = vscode2.workspace.getConfiguration().get("umath.preview.renderer");
-    var cssConfig = vscode2.workspace.getConfiguration().get("umath.preview.customCSS")?.join("");
+    var PreviewState = {
+      decorationArray: [],
+      macrosString: "",
+      config: {
+        macro: null,
+        enablePreview: false,
+        autoAdjustPosition: false,
+        position: null,
+        renderer: null,
+        css: ""
+      },
+      tempEditor: null,
+      error: { occurred: false, reset: false }
+    };
+    var ConfigManager = {
+      get(key) {
+        return vscode2.workspace.getConfiguration(`umath.preview`).get(key);
+      },
+      updateAll() {
+        PreviewState.config = {
+          macro: this.get("macros"),
+          enablePreview: this.get("enableMathPreview"),
+          autoAdjustPosition: this.get("AutoAdjustPreviewPosition"),
+          position: this.get("position"),
+          renderer: this.get("renderer"),
+          css: this.get("customCSS")?.join("") || ""
+        };
+      },
+      handleConfigChange(event) {
+        if (!event)
+          return;
+        const configMap = {
+          "macros": "macro",
+          "enableMathPreview": "enablePreview",
+          "AutoAdjustPreviewPosition": "autoAdjustPosition",
+          "position": "position",
+          "renderer": "renderer",
+          "customCSS": "css"
+        };
+        Object.entries(configMap).forEach(([key, prop]) => {
+          if (event.affectsConfiguration(`umath.preview.${key}`)) {
+            PreviewState.config[prop] = key === "customCSS" ? this.get(key)?.join("") || "" : this.get(key);
+          }
+        });
+        if (!PreviewState.config.enablePreview) {
+          clearPreview();
+        }
+      }
+    };
+    var MacroProcessor = {
+      update(document2) {
+        PreviewState.macrosString = getMacros(document2, PreviewState.config.macro)?.join("\n") ?? "";
+      }
+    };
+    var EventHandlers = {
+      withPreviewCheck(handler) {
+        return (...args) => PreviewState.config.enablePreview && handler(...args);
+      },
+      onActiveEditorChange(e) {
+        if (e)
+          MacroProcessor.update(e.document);
+      },
+      onSelectionChange(e) {
+        if (e) {
+          setPreview(e.textEditor.document, e.selections[0]?.active);
+          PreviewState.tempEditor = e;
+        }
+      },
+      onVisibleRangesChange() {
+        if (PreviewState.config.autoAdjustPosition && PreviewState.tempEditor) {
+          setPreview(
+            PreviewState.tempEditor.textEditor.document,
+            PreviewState.tempEditor.selections[0]?.active
+          );
+        }
+      }
+    };
+    var Commands = [
+      ["umath.preview.closeAllPreview", clearPreview],
+      ["umath.preview.reloadMacros", reloadMacros],
+      ["umath.preview.toggleMathPreview", toggleMathPreview],
+      ["umath.preview.reloadPreview", () => {
+        const editor = vscode2.window.activeTextEditor;
+        setPreview(editor?.document, editor?.selection?.active);
+      }]
+    ];
     var onError = false;
     var resetError = false;
-    var e_temp;
     var Height;
     var defaultMaxHeight = "max-height: 45em;";
+    var SVG_REPLACE_REGEX = {
+      style: /(?<=style\s*=\s*)"/,
+      container: /<mjx-container[^<]*><svg/,
+      endContainer: /<\/mjx-container>/
+    };
+    var MATH_REPLACE_REGEX = {
+      delimiter: /\$\$|\$|\\\[|\\\(|\\begin\{math\}|\\begin\{displaymath\}/,
+      blankFormula: /^\s*$/,
+      blockquote: /[\n\r]([ \s]*>)+/g
+    };
     function activate2(context) {
-      macrosString = getMacros(vscode2.window?.activeTextEditor?.document, macroConfig)?.join("\n") ?? "";
-      enablePreview = vscode2.workspace.getConfiguration().get("umath.preview.enableMathPreview");
+      ConfigManager.updateAll();
+      MacroProcessor.update(vscode2.window.activeTextEditor?.document);
       context.subscriptions.push(
-        vscode2.commands.registerCommand("umath.preview.closeAllPreview", clearPreview),
-        vscode2.commands.registerCommand("umath.preview.reloadMacros", reloadMacros),
-        vscode2.commands.registerCommand("umath.preview.toggleMathPreview", toggleMathPreview),
-        vscode2.commands.registerCommand("umath.preview.reloadPreview", () => {
-          if (!enablePreview)
-            return;
-          const editor = vscode2?.window?.activeTextEditor;
-          setPreview(editor?.document, editor?.selection?.active);
-        }),
-        vscode2.window.onDidChangeActiveTextEditor((e) => {
-          enablePreview && e && (macrosString = getMacros(e?.document, macroConfig)?.join("\n") ?? "");
-        }),
-        vscode2.window.onDidChangeTextEditorSelection((e) => {
-          enablePreview && e && setPreview(e?.textEditor?.document, e?.selections[0]?.active);
-          e_temp = e;
-        }),
-        vscode2.window.onDidChangeTextEditorVisibleRanges((e) => {
-          enablePreview && IsAutoAdjustPosi && e && setPreview(e_temp?.textEditor?.document, e_temp?.selections[0]?.active);
-        }),
-        vscode2.workspace.onDidChangeConfiguration((e) => {
-          e && e.affectsConfiguration("umath.preview.macros") && (macroConfig = vscode2.workspace.getConfiguration().get("umath.preview.macros"));
-          e && e.affectsConfiguration("umath.preview.position") && (positionConfig = vscode2.workspace.getConfiguration().get("umath.preview.position"));
-          e && e.affectsConfiguration("umath.preview.AutoAdjustPreviewPosition") && (positionConfig = vscode2.workspace.getConfiguration().get("umath.preview.AutoAdjustPreviewPosition"));
-          e && e.affectsConfiguration("umath.preview.renderer") && (rendererConfig = vscode2.workspace.getConfiguration().get("umath.preview.renderer"));
-          e && e.affectsConfiguration("umath.preview.enableMathPreview") && (enablePreview = vscode2.workspace.getConfiguration().get("umath.preview.enableMathPreview"));
-          e && e.affectsConfiguration("umath.preview.customCSS") && (cssConfig = vscode2.workspace.getConfiguration().get("umath.preview.customCSS")?.join(""));
-          !enablePreview && clearPreview();
-        })
+        ...Commands.map(
+          ([name, handler]) => vscode2.commands.registerCommand(
+            name,
+            name.includes("reloadPreview") ? EventHandlers.withPreviewCheck(handler) : handler
+          )
+        )
+      );
+      context.subscriptions.push(
+        vscode2.window.onDidChangeActiveTextEditor(EventHandlers.onActiveEditorChange),
+        vscode2.window.onDidChangeTextEditorSelection(
+          EventHandlers.withPreviewCheck(EventHandlers.onSelectionChange)
+        ),
+        vscode2.window.onDidChangeTextEditorVisibleRanges(
+          EventHandlers.withPreviewCheck(EventHandlers.onVisibleRangesChange)
+        ),
+        vscode2.workspace.onDidChangeConfiguration(ConfigManager.handleConfigChange)
       );
     }
+    var renderTimeout;
+    var RENDER_DEBOUNCE = 50;
     function setPreview(document2, position) {
+      clearTimeout(renderTimeout);
+      renderTimeout = setTimeout(() => _setPreview(document2, position), RENDER_DEBOUNCE);
+    }
+    async function _setPreview(document2, position) {
       clearPreview();
       if (!document2 || !position)
         return;
@@ -64654,14 +64739,14 @@ var require_math_preview = __commonJS({
         resetError && (onError = !onError);
         resetError = !resetError;
       }
-      const testScope = getMathScope(document2, position);
+      const testScope = getCachedMathScope(document2, position);
       if (!testScope || testScope.isInBeginDelimiter || testScope.isInEndDelimiter)
         return;
       const beginMath = getBegin(testScope.scope.includes("meta.math.block"), testScope.isDisplayMath);
       const endMath = getEnd(testScope.scope.includes("meta.math.block"), testScope.isDisplayMath);
       const beginInfo = jumpToBeginPosition(document2, position, beginMath);
       const endInfo = jumpToEndPosition(document2, position, endMath);
-      const cutBegin = beginInfo.match?.matchStr?.match(/\$\$|\$|\\\[|\\\(|\\begin\{math\}|\\begin\{displaymath\}/)?.[0]?.length ?? 0;
+      const cutBegin = beginInfo.match?.matchStr?.match(MATH_REPLACE_REGEX.delimiter)?.[0]?.length ?? 0;
       const cutEnd = endInfo.match ? cutBegin > 2 ? cutBegin - 2 : cutBegin : 0;
       const mathRange = new vscode2.Range(
         beginInfo.insertPosition.line,
@@ -64670,11 +64755,11 @@ var require_math_preview = __commonJS({
         endInfo.insertPosition.character - cutEnd
       );
       let mathExpression = document2.getText(mathRange);
-      if (mathExpression.match(/^\s*$/))
+      if (mathExpression.match(MATH_REPLACE_REGEX.blankFormula))
         return;
       if (testScope.isDisplayMath && testScope.scope.indexOf("quote") !== -1)
-        mathExpression = mathExpression.replace(/[\n\r]([ \s]*>)+/g, "");
-      mathExpression = macrosString + mathExpression;
+        mathExpression = mathExpression.replace(MATH_REPLACE_REGEX.blockquote, "");
+      mathExpression = PreviewState.macrosString + mathExpression;
       const visibleRanges = vscode2.window.activeTextEditor.visibleRanges[0];
       const StartLine = visibleRanges.start.line;
       const EndLine = visibleRanges.end.line;
@@ -64682,12 +64767,12 @@ var require_math_preview = __commonJS({
       if (lineHeightConfig === 0 || lineHeightConfig === void 0 || lineHeightConfig === null) {
         lineHeightConfig = 1.2;
       }
-      const { MaxHeightValue, Unit } = getMaxHeightValueAndUnit(defaultMaxHeight + cssConfig);
+      const { MaxHeightValue, Unit } = getMaxHeightValueAndUnit(defaultMaxHeight + PreviewState.config.css);
       renderAndGetHeightInEm(
         mathExpression,
         testScope.isDisplayMath,
         texRenderer,
-        rendererConfig
+        PreviewState.config.renderer
       ).then((height) => {
         if (height == "undefined")
           return;
@@ -64704,20 +64789,31 @@ var require_math_preview = __commonJS({
         console.error("Error rendering SVG:", error);
       });
       const lineHeight = Math.ceil(Height / lineHeightConfig);
-      const candidate = positionConfig === "bottom" ? endInfo.insertPosition.line : beginInfo.insertPosition.line - lineHeight;
+      const candidate = PreviewState.config.position === "bottom" ? endInfo.insertPosition.line : beginInfo.insertPosition.line - lineHeight;
       const lowerBound = StartLine + 1;
       const upperBound = EndLine - lineHeight;
       const InstLine = Math.min(Math.max(candidate, lowerBound), upperBound);
       const previewPosition = new vscode2.Position(InstLine, endInfo.insertPosition.character - endInfo.match?.matchStr?.length);
       pushPreview(mathExpression, testScope.isDisplayMath, previewPosition);
     }
+    var lastScopeCache = null;
+    function getCachedMathScope(document2, position) {
+      const key = `${document2.uri.toString()}:${position.line}:${position.character}`;
+      if (!lastScopeCache || lastScopeCache.key !== key) {
+        lastScopeCache = {
+          key,
+          value: getMathScope(document2, position)
+        };
+      }
+      return lastScopeCache.value;
+    }
     function pushPreview(mathExpression, isBlock, previewPosition) {
-      texRenderer[rendererConfig](mathExpression, isBlock).then((svgString) => {
+      texRenderer[PreviewState.config.renderer](mathExpression, isBlock).then((svgString) => {
         if (svgString.includes("error"))
           return;
         let mathPreview2 = createPreview(svgString);
         vscode2.commands.executeCommand("setContext", "umathShowPreview", true);
-        decorationArray.push(mathPreview2);
+        PreviewState.decorationArray.push(mathPreview2);
         vscode2.window.activeTextEditor.setDecorations(mathPreview2, [new vscode2.Range(previewPosition, previewPosition)]);
       }).catch((err) => {
         console.log(err.message);
@@ -64733,9 +64829,8 @@ var require_math_preview = __commonJS({
       });
     }
     function createPreview(mathString) {
-      const stringColor = vscode2.window.activeColorTheme.kind === vscode2.ColorThemeKind.Dark || vscode2.window.activeColorTheme.kind === vscode2.ColorThemeKind.HighContrast ? "#fff" : "#111";
-      mathString = mathString.replace(/(?<=style\s*=\s*)"/, `"color:${stringColor};`).split("#").join("%23").replace(/<mjx-container[^<]*><svg/, "<svg").replace("</mjx-container>", "");
-      const defaultCss = `content: url('data:image/svg+xml;utf8,${mathString}');        position: absolute;        padding: 0.5em;        ${positionConfig === "top" ? "bottom" : "top"}: 1.15em;        display: inline-block;        z-index: 1;        pointer-events: auto;        background-color: var(--vscode-editor-background);        border: 0.5px solid var(--vscode-editorWidget-border);` + defaultMaxHeight + cssConfig;
+      mathString = mathString.replace(SVG_REPLACE_REGEX.style, `"color:${getThemeColor()};`).split("#").join("%23").replace(SVG_REPLACE_REGEX.container, "<svg").replace(SVG_REPLACE_REGEX.endContainer, "");
+      const defaultCss = `content: url('data:image/svg+xml;utf8,${mathString}');        position: absolute;        padding: 0.5em;        ${PreviewState.config.position === "top" ? "bottom" : "top"}: 1.15em;        display: inline-block;        z-index: 1;        pointer-events: auto;        background-color: var(--vscode-editor-background);        border: 0.5px solid var(--vscode-editorWidget-border);` + defaultMaxHeight + PreviewState.config.css;
       return vscode2.window.createTextEditorDecorationType({
         before: {
           contentText: "",
@@ -64745,28 +64840,35 @@ var require_math_preview = __commonJS({
         rangeBehavior: vscode2.DecorationRangeBehavior.ClosedClosed
       });
     }
+    var themeColorCache = "";
+    function getThemeColor() {
+      if (!themeColorCache) {
+        themeColorCache = vscode2.window.activeColorTheme.kind === vscode2.ColorThemeKind.Dark || vscode2.window.activeColorTheme.kind === vscode2.ColorThemeKind.HighContrast ? "#fff" : "#111";
+      }
+      return themeColorCache;
+    }
     function clearPreview() {
-      for (let thisDeco of decorationArray)
-        thisDeco.dispose();
-      decorationArray.length = 0;
-      vscode2.commands.executeCommand("setContext", "umathShowPreview", false);
+      PreviewState.decorationArray.forEach((decoration) => {
+        vscode2.window.activeTextEditor?.setDecorations(decoration, []);
+      });
+      PreviewState.decorationArray = [];
     }
     function reloadMacros() {
-      if (!enablePreview)
+      if (!PreviewState.config.enablePreview)
         return;
       macroConfig = vscode2.workspace.getConfiguration().get("umath.preview.macros");
       const editor = vscode2.window?.activeTextEditor;
-      macrosString = getMacros(editor?.document, macroConfig)?.join("\n") ?? "";
+      PreviewState.macrosString = getMacros(editor?.document, macroConfig)?.join("\n") ?? "";
       setPreview(editor?.document, editor?.selection?.active);
     }
     function toggleMathPreview() {
-      vscode2.workspace.getConfiguration().update("umath.preview.enableMathPreview", !enablePreview, true);
-      enablePreview = !enablePreview;
+      vscode2.workspace.getConfiguration().update("umath.preview.enableMathPreview", !PreviewState.config.enablePreview, true);
+      PreviewState.config.enablePreview = !PreviewState.config.enablePreview;
       clearPreview();
-      if (!enablePreview)
+      if (!PreviewState.config.enablePreview)
         return;
       const editor = vscode2?.window?.activeTextEditor;
-      macrosString = getMacros(editor?.document, macroConfig)?.join("\n") ?? "";
+      PreviewState.macrosString = getMacros(editor?.document, macroConfig)?.join("\n") ?? "";
       setPreview(editor?.document, editor?.selection?.active);
     }
     module85.exports = {
