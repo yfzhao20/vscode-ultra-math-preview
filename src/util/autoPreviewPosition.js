@@ -91,11 +91,6 @@ async function renderAndGetHeightInEm(mathExpression, isDisplayMath, texRenderer
 }
 
 function getSvgHeight(svgString) {
-    const heightMatch = svgString.match(SVG_HEIGHT_REGEX);
-    return heightMatch ? parseFloat(heightMatch[1]) : 24;
-}
-
-function getSvgHeight(svgString) {
     // Resolve the explicit height property
     const heightMatch = svgString.match(SVG_HEIGHT_REGEX);
     return heightMatch ? parseFloat(heightMatch[1]) : 24;// If not found, return the default value

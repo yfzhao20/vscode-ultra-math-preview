@@ -29,8 +29,9 @@ const PreviewState = {
 };
 // global var
 const temp = {
-    svgString:null,
+    svgString: null,
     height: null,
+    beginInfo: null,
     endInfo: null,
     selections: null
 };
@@ -172,7 +173,7 @@ function activate(context) {
         vscode.window.onDidChangeTextEditorVisibleRanges(
             EventHandlers.withPreviewCheck(EventHandlers.onVisibleRangesChange)
         ),
-        vscode.workspace.onDidChangeConfiguration((e) => { ConfigManager.handleConfigChange(e)})
+        vscode.workspace.onDidChangeConfiguration((e) => { ConfigManager.handleConfigChange(e) })
     );
 }
 
@@ -214,15 +215,16 @@ const PreviewUtils = {
     },
 
     // Calculate the preview position
-    calculatePreviewPosition(lineHeightConfig, height, visibleRanges, configPosition, endInfo) {
+    calculatePreviewPosition(lineHeightConfig, height, visibleRanges, configPosition, beginInfo, endInfo) {
         const lineHeight = Math.ceil(height / lineHeightConfig);
-        const candidate = configPosition === 'bottom'
-            ? endInfo.insertPosition.line
-            : endInfo.insertPosition.line - lineHeight;
+        const Isbottom = Boolean(configPosition === 'bottom');
+        const candidate = Isbottom ? endInfo.insertPosition.line
+            : beginInfo.insertPosition.line;
 
         return Math.min(
-            Math.max(candidate, visibleRanges.start.line + 1),
-            visibleRanges.end.line - lineHeight
+            Math.max(candidate, Isbottom ? visibleRanges.start.line + 1
+                : visibleRanges.start.line + lineHeight),
+            Isbottom ? visibleRanges.end.line - lineHeight : visibleRanges.end.line
         );
     }
 };
@@ -283,7 +285,7 @@ async function _setPreview(document, position) {
     if (!isValidMathScope(testScope)) return;
 
     // Parse mathematical expressions
-    const { mathExpression, isDisplayMath, endInfo } = processMathExpression(document, testScope, position);
+    const { mathExpression, isDisplayMath, beginInfo, endInfo } = processMathExpression(document, testScope, position);
     if (!mathExpression || mathExpression.match(MATH_REPLACE_REGEX.blankFormula)) return;
 
     // Calculate the preview height
@@ -296,19 +298,21 @@ async function _setPreview(document, position) {
 
     // Render the preview and set the position
     const lineHeight = PreviewUtils.getConfig('editor', 'lineHeight', 0);
-    const lineHeightConfig = lineHeight === 0 ? 1.2 : lineHeight;
+    const lineHeightConfig = lineHeight === 0 ? 1.2 : lineHeight;// workspace config
     const visibleRanges = vscode.window.activeTextEditor.visibleRanges[0];
     const instLine = PreviewUtils.calculatePreviewPosition(
         lineHeightConfig,
         height,
         visibleRanges,
         PreviewState.config.position,
+        beginInfo,
         endInfo
     );
 
     finalizePreview(mathExpression, isDisplayMath, instLine, endInfo);
 
     temp.height = height;
+    temp.beginInfo = beginInfo;
     temp.endInfo = endInfo;
 }
 
@@ -330,6 +334,7 @@ function processMathExpression(document, testScope, position) {
     return {
         mathExpression: PreviewUtils.processMathContent(mathExpression, testScope),
         isDisplayMath: testScope.isDisplayMath,
+        beginInfo,
         endInfo
     };
 }
@@ -444,6 +449,7 @@ async function _reLocatingPreview(svgString) {
 
     // get the global var
     const height = temp.height;
+    const beginInfo = temp.beginInfo;
     const endInfo = temp.endInfo;
 
     // Render the preview and set the position
@@ -455,9 +461,10 @@ async function _reLocatingPreview(svgString) {
         height,
         visibleRanges,
         PreviewState.config.position,
+        beginInfo,
         endInfo
     );
-    
+
     const charPos = endInfo.insertPosition.character - (endInfo.match?.matchStr?.length ?? 0);
     const previewPosition = new vscode.Position(instLine, charPos);
 
