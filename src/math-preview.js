@@ -33,7 +33,8 @@ const temp = {
     height: null,
     beginInfo: null,
     endInfo: null,
-    selections: null
+    selections: null,
+    IsMathScrope: false
 };
 
 // Configuration Manager
@@ -282,7 +283,9 @@ async function _setPreview(document, position) {
 
     // Get math ranges
     const testScope = getCachedMathScope(document, position);
-    if (!isValidMathScope(testScope)) return;
+    if (!isValidMathScope(testScope)) {
+        temp.IsMathScrope = false; return;
+    } else { temp.IsMathScrope = true; }
 
     // Parse mathematical expressions
     const { mathExpression, isDisplayMath, beginInfo, endInfo } = processMathExpression(document, testScope, position);
@@ -445,7 +448,7 @@ function reLocatingPreview(svgString) {
 }
 async function _reLocatingPreview(svgString) {
     clearPreview();
-    if (!svgString || PreviewState.ERROR.occurred) return;
+    if (!svgString || PreviewState.ERROR.occurred || !temp.IsMathScrope) return;
 
     // get the global var
     const height = temp.height;
