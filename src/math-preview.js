@@ -22,13 +22,17 @@ const PreviewState = {
         renderer: null,
         css: ""
     },
-    temp: {
-        svgString,
-        height,
-        endInfo,
-        selction
-    },
-    error: { occurred: false, reset: false }
+    ERROR: {
+        occurred: false,
+        reset: false
+    }
+};
+// global var
+const temp = {
+    svgString:null,
+    height: null,
+    endInfo: null,
+    selections: null
 };
 
 // Configuration Manager
@@ -94,16 +98,13 @@ const EventHandlers = {
     onSelectionChange(e) {
         if (e) {
             setPreview(e.textEditor.document, e.selections[0]?.active);
-            PreviewState.temp.selections = e.selections
+            temp.selections = e.selections
         }
     },
 
     onVisibleRangesChange() {
-        if (PreviewState.config.AutoAdjustPosition && PreviewState.mathPreview) {
-            reLocatingPreview(
-                PreviewState.temp.svgString,
-                PreviewState.temp.selections[0]?.active
-            );
+        if (PreviewState.config.AutoAdjustPosition && temp.svgString) {
+            reLocatingPreview(temp.svgString);
         }
     }
 };
@@ -117,9 +118,6 @@ const Commands = [
         setPreview(editor?.document, editor?.selection?.active);
     }]
 ];
-
-// handle MathJax error. Reload on error once.
-let onError = false;
 
 const defaultCSS = {
     maxheight: 'max-height: 45em;',
@@ -174,7 +172,7 @@ function activate(context) {
         vscode.window.onDidChangeTextEditorVisibleRanges(
             EventHandlers.withPreviewCheck(EventHandlers.onVisibleRangesChange)
         ),
-        vscode.workspace.onDidChangeConfiguration(ConfigManager.handleConfigChange)
+        vscode.workspace.onDidChangeConfiguration((e) => { ConfigManager.handleConfigChange(e); console.log('config changed')})
     );
 }
 /** 
@@ -313,7 +311,7 @@ class HeightCalculator {
 async function _setPreview(document, position) {
     // Pre-confirmation
     clearPreview();
-    if (!document || !position || PreviewState.error.occurred) return;
+    if (!document || !position || PreviewState.ERROR.occurred) return;
 
     // Get math ranges
     const testScope = getCachedMathScope(document, position);
@@ -345,8 +343,8 @@ async function _setPreview(document, position) {
 
     finalizePreview(mathExpression, isDisplayMath, instLine, endInfo);
 
-    PreviewState.temp.height = height;
-    PreviewState.temp.endInfo = endInfo;
+    temp.height = height;
+    temp.endInfo = endInfo;
 }
 
 // Supporting method
@@ -405,7 +403,7 @@ function pushPreview(mathExpression, isBlock, previewPosition) {
                 return
             // create preview panel
             let mathPreview = createPreview(svgString)
-            PreviewState.temp.svgString = svgString;
+            temp.svgString = svgString;
             // set when clause
             vscode.commands.executeCommand('setContext', 'umathShowPreview', true)
             PreviewState.decorationArray.push(mathPreview)
@@ -413,13 +411,13 @@ function pushPreview(mathExpression, isBlock, previewPosition) {
         })
         .catch((err) => {
             console.log(err.message);
-            if (onError) {
-                onError = false;
-                resetError = false;
+            if (PreviewState.ERROR.occurred) {
+                PreviewState.ERROR.occurred = false;
+                PreviewState.ERROR.reset = false;
             }
             else {
                 console.log("retry");
-                onError = true;
+                PreviewState.ERROR.reset = true;
                 const editor = vscode?.window?.activeTextEditor;
                 setPreview(editor?.document, editor?.selection?.active);
             }
@@ -466,13 +464,13 @@ function getThemeColor() {
 }
 
 /////////////////////////////////////////////////////////
-async function reLocatingPreview(mathPreview, position) {
+async function reLocatingPreview(svgString) {
     clearPreview();
-    if (!mathPreview || !position || PreviewState.error.occurred) return;
+    if (!svgString || PreviewState.ERROR.occurred) return;
 
     // get the global var
-    const height = PreviewState.temp.height;
-    const endInfo = PreviewState.temp.endInfo;
+    const height = temp.height;
+    const endInfo = temp.endInfo;
 
     // Render the preview and set the position
     const lineHeight = PreviewUtils.getConfig('editor', 'lineHeight', 0);
@@ -485,35 +483,14 @@ async function reLocatingPreview(mathPreview, position) {
         PreviewState.config.position,
         endInfo
     );
-
+    
     const charPos = endInfo.insertPosition.character - (endInfo.match?.matchStr?.length ?? 0);
     const previewPosition = new vscode.Position(instLine, charPos);
-    pushPreview(mathPreview, isDisplayMath, previewPosition);
 
-    mathString = mathString
-        .replace(SVG_REPLACE_REGEX.style, `"color:${getThemeColor()};`)
-        .split("#").join('%23')
-        .replace(SVG_REPLACE_REGEX.container, "<svg")
-        .replace(SVG_REPLACE_REGEX.endContainer, "");
-
-    const CSSstring =
-        // Info: Text and preview SVG are positioned in reverseshow.
-        `content: url('data:image/svg+xml;utf8,${mathString}');\
-        ${PreviewState.config.position === 'top' ? 'bottom' : 'top'}: 1.15em;`
-        + defaultCSS.maxheight + defaultCSS.OtherCSS + PreviewState.config.css
-
-    vscode.window.createTextEditorDecorationType({
-        before: {
-            contentText: '',
-            textDecoration: `none; ${CSSstring} `,
-        },
-        textDecoration: `none; position: relative;`,
-        rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-    });
+    let mathPreview = createPreview(svgString)
     vscode.commands.executeCommand('setContext', 'umathShowPreview', true)
     PreviewState.decorationArray.push(mathPreview)
     vscode.window.activeTextEditor.setDecorations(mathPreview, [new vscode.Range(previewPosition, previewPosition)])
-
 }
 
 /////////////////////////////////////////////////////////
