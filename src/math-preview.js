@@ -172,53 +172,18 @@ function activate(context) {
         vscode.window.onDidChangeTextEditorVisibleRanges(
             EventHandlers.withPreviewCheck(EventHandlers.onVisibleRangesChange)
         ),
-        vscode.workspace.onDidChangeConfiguration((e) => { ConfigManager.handleConfigChange(e); console.log('config changed')})
+        vscode.workspace.onDidChangeConfiguration((e) => { ConfigManager.handleConfigChange(e)})
     );
 }
-/** 
-function activate(context) {
-    macrosString = getMacros(vscode.window?.activeTextEditor?.document, macroConfig)?.join('\n') ?? ""
-    enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview')
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('umath.preview.closeAllPreview', clearPreview),
-        vscode.commands.registerCommand('umath.preview.reloadMacros', reloadMacros),
-        vscode.commands.registerCommand('umath.preview.toggleMathPreview', toggleMathPreview),
-        vscode.commands.registerCommand('umath.preview.reloadPreview', () => {
-            if (!enablePreview)
-                return;
-            const editor = vscode?.window?.activeTextEditor;
-            setPreview(editor?.document, editor?.selection?.active);
-        }),
-
-        vscode.window.onDidChangeActiveTextEditor((e) => { enablePreview && e && (macrosString = getMacros(e?.document, macroConfig)?.join('\n') ?? "") }),
-        vscode.window.onDidChangeTextEditorSelection((e) => {
-            enablePreview && e && setPreview(e?.textEditor?.document, e?.selections[0]?.active);
-            e_temp = e;
-        }),
-        vscode.window.onDidChangeTextEditorVisibleRanges((e) => {
-            enablePreview && IsAutoAdjustPosi && e && setPreview(e_temp?.textEditor?.document, e_temp?.selections[0]?.active)
-        }),
-
-        vscode.workspace.onDidChangeConfiguration((e) => {
-            e && e.affectsConfiguration("umath.preview.macros") && (macroConfig = vscode.workspace.getConfiguration().get("umath.preview.macros"));
-            e && e.affectsConfiguration("umath.preview.position") && (positionConfig = vscode.workspace.getConfiguration().get('umath.preview.position'));
-            e && e.affectsConfiguration("umath.preview.AutoAdjustPreviewPosition") && (positionConfig = vscode.workspace.getConfiguration().get('umath.preview.AutoAdjustPreviewPosition'));
-            e && e.affectsConfiguration("umath.preview.renderer") && (rendererConfig = vscode.workspace.getConfiguration().get('umath.preview.renderer'));
-            e && e.affectsConfiguration("umath.preview.enableMathPreview") && (enablePreview = vscode.workspace.getConfiguration().get('umath.preview.enableMathPreview'));
-            e && e.affectsConfiguration("umath.preview.customCSS") && (cssConfig = vscode.workspace.getConfiguration().get('umath.preview.customCSS')?.join(''));
-            !enablePreview && clearPreview();
-        }),
-    )
-}*/
 
 
-let renderTimeout;
-const RENDER_DEBOUNCE = 50; // 50ms
+let renderTimeout_setPreview;
+const RENDER_DEBOUNCE_setPreview = 50; // 50ms
 // Added rendering request stabilization
 function setPreview(document, position) {
-    clearTimeout(renderTimeout);
-    renderTimeout = setTimeout(() => _setPreview(document, position), RENDER_DEBOUNCE);
+    clearTimeout(renderTimeout_setPreview);
+    renderTimeout_setPreview = setTimeout(
+        () => _setPreview(document, position), RENDER_DEBOUNCE_setPreview);
 }
 
 // A collection of utility functions
@@ -464,7 +429,16 @@ function getThemeColor() {
 }
 
 /////////////////////////////////////////////////////////
-async function reLocatingPreview(svgString) {
+
+let renderTimeout_reLocatingPreview;
+const RENDER_DEBOUNCE_reLocatingPreview = 50; // 50ms
+// Added rendering request stabilization
+function reLocatingPreview(svgString) {
+    clearTimeout(renderTimeout_reLocatingPreview);
+    renderTimeout_reLocatingPreview = setTimeout(
+        () => _reLocatingPreview(svgString), RENDER_DEBOUNCE_reLocatingPreview);
+}
+async function _reLocatingPreview(svgString) {
     clearPreview();
     if (!svgString || PreviewState.ERROR.occurred) return;
 
