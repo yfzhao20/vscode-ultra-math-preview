@@ -1,19 +1,8 @@
 "use strict";
 
 // autoPreviewPosition.js
-const SVG_HEIGHT_REGEX = /height\s*=\s*["']([^%]+?)["']/i;
-const UNIT_REGEX = /^([+-]?(?:\d*\.)?\d+)(rem|em|px|%|vw|vh)$/i;
-const MAX_HEIGHT_REGEX = /^max-height\s*:/i;
-const CSS_SPLIT_REGEX = /;(?![^(]*\))/;
-const VALUE_SPLIT_REGEX = /:\s*/i;
-const isImportant_REGEX = /\b!important\s*$/i;
-const cleanValue_REGEX = /\s*!important\s*$/i;
-
-module.exports = {
-    getMaxHeightValueAndUnit,
-    renderAndGetHeightInEm,
-    getSvgHeight
-};
+const { AUTO_PREVIEW_POSITION_REGEX } = require('./constants');
+const texRenderer = require('./texRenderer');
 
 /**
  * Parses and extracts the effective max-height value and unit from a CSS string
@@ -28,16 +17,16 @@ module.exports = {
 function getMaxHeightValueAndUnit(cssString) {
     // 1. Extract and parse all max-height declarations
     const declarations = cssString
-        .split(CSS_SPLIT_REGEX)
+        .split(AUTO_PREVIEW_POSITION_REGEX.css_split)
         .map(rule => rule.trim())
-        .filter(rule => MAX_HEIGHT_REGEX.test(rule))
+        .filter(rule => AUTO_PREVIEW_POSITION_REGEX.max_height.test(rule))
         .map((rule, index) => {
-            const [, value] = rule.split(VALUE_SPLIT_REGEX);
-            const isImportant = isImportant_REGEX.test(value);
-            const cleanValue = value.replace(cleanValue_REGEX, '').trim();
+            const [, value] = rule.split(AUTO_PREVIEW_POSITION_REGEX.valuesplit);
+            const IsImportant = AUTO_PREVIEW_POSITION_REGEX.isImportant.test(value);
+            const cleanValue = value.replace(AUTO_PREVIEW_POSITION_REGEX.cleanValue, '').trim();
             return {
                 value: cleanValue,
-                priority: isImportant ? 1 : 0,
+                priority: IsImportant ? 1 : 0,
                 index
             };
         });
@@ -51,7 +40,7 @@ function getMaxHeightValueAndUnit(cssString) {
 
     // 3. Parse the units and numeric values of valid values
     const value = declarations[0].value;
-    const match = value.match(UNIT_REGEX);
+    const match = value.match(AUTO_PREVIEW_POSITION_REGEX.unit);
 
     if (!match) return null;
 
@@ -60,7 +49,6 @@ function getMaxHeightValueAndUnit(cssString) {
         Unit: match[2].toLowerCase()
     };
 }
-
 
 /**
  * Asynchronously renders a mathematical expression to an SVG string,
@@ -72,7 +60,7 @@ function getMaxHeightValueAndUnit(cssString) {
  * @returns {number|undefined} The SVG's height in `em` units (rounded up)
  *                             or undefined if an error occurs during rendering.
  */
-async function renderAndGetHeightInEm(mathExpression, isDisplayMath, texRenderer, rendererConfig) {
+async function renderAndGetHeightInEm(mathExpression, isDisplayMath, rendererConfig) {
     let svgHeightInEm;
     try {
         const svgString = await texRenderer[rendererConfig](mathExpression, isDisplayMath);
@@ -92,6 +80,12 @@ async function renderAndGetHeightInEm(mathExpression, isDisplayMath, texRenderer
 
 function getSvgHeight(svgString) {
     // Resolve the explicit height property
-    const heightMatch = svgString.match(SVG_HEIGHT_REGEX);
+    const heightMatch = svgString.match(AUTO_PREVIEW_POSITION_REGEX.svg_height);
     return heightMatch ? parseFloat(heightMatch[1]) : 24;// If not found, return the default value
 }
+
+module.exports = {
+    getMaxHeightValueAndUnit,
+    renderAndGetHeightInEm,
+    getSvgHeight
+};
