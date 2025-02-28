@@ -8,7 +8,7 @@ const temp = {
     beginInfo: null,
     endInfo: null,
     selections: null,
-    IsMathScope:null
+    IsMathScope: null
 }
 
 // State management objects
@@ -19,6 +19,7 @@ const PreviewState = {
         macro: null,
         enablePreview: false,
         AutoAdjustPosition: false,
+        debounceTime: 0,
         position: null,
         renderer: null,
         css: ""

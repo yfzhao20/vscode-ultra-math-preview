@@ -14,6 +14,7 @@ const ConfigManager = {
             macro: this.get('macros'),
             enablePreview: this.get('enableMathPreview'),
             AutoAdjustPosition: this.get('AutoAdjustPreviewPosition'),
+            DebounceTime: this.get('DebounceTime'),
             position: this.get('position'),
             renderer: this.get('renderer'),
             css: this.get('customCSS')?.join('') || ""
@@ -27,6 +28,7 @@ const ConfigManager = {
             'macros': 'macro',
             'enableMathPreview': 'enablePreview',
             'AutoAdjustPreviewPosition': 'AutoAdjustPosition',
+            'DebounceTime':'debounceTime',
             'position': 'position',
             'renderer': 'renderer',
             'customCSS': 'css'

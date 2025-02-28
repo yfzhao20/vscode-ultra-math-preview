@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/yfzhao20/vscode-ultra-math-preview/issues"
   },
-  "version": "0.2.4",
+  "version": "0.2.5",
   "publisher": "yfzhao",
   "preview": true,
   "engines": {
@@ -77,6 +77,11 @@
             "default": true,
             "description": "Automatically adjusts the position of the preview window."
           },
+          "umath.preview.DebounceTime": {
+            "type": "string",
+            "default": 0,
+            "description": "Adjust the Debounce Time (ms) to suit different device performance. When set to 0, it will be disabled."
+          },
           "umath.preview.position": {
             "type": "string",
             "enum": [
@@ -130,7 +135,7 @@
   "devDependencies": {
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.0.0",
-    "@types/node": "14.x",
+    "@types/node": "18.0.0",
     "@types/vscode": "^1.54.0",
     "@vscode/test-electron": "^2.0.3",
     "esbuild": "^0.14.29",

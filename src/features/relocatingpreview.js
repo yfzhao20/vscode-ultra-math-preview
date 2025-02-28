@@ -9,7 +9,7 @@ const {
 } = require('../util/mathexpressionprocesor');
 
 let renderTimeout_reLocatingPreview;
-const RENDER_DEBOUNCE_reLocatingPreview = 50; // 50ms
+const RENDER_DEBOUNCE_reLocatingPreview = PreviewState.config.debounceTime; // unit:ms
 
 // Added rendering request stabilization
 function reLocatingPreview(svgString) {

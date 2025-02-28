@@ -14,7 +14,7 @@ const {
 } = require('../util/mathexpressionprocesor');
 
 let renderTimeout_setPreview;
-const RENDER_DEBOUNCE_setPreview = 50; // 50ms
+const RENDER_DEBOUNCE_setPreview = PreviewState.config.debounceTime; // unit:ms
 // Added rendering request stabilization
 function setPreview(document, position) {
     clearTimeout(renderTimeout_setPreview);
