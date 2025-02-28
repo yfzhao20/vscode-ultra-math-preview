@@ -27,11 +27,7 @@
   ],
   "activationEvents": [
     "onLanguage:markdown",
-    "onLanguage:latex",
-		"onCommand:umath.preview.reloadPreview",
-		"onCommand:umath.preview.toggleMathPreview",
-		"onCommand:umath.preview.reloadMacros",
-    "onCommand:umath.preview.closeAllPreview"
+    "onLanguage:latex"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -76,6 +72,11 @@
             "default": true,
             "description": "Show math preview."
           },
+          "umath.preview.AutoAdjustPreviewPosition": {
+            "type": "boolean",
+            "default": true,
+            "description": "Automatically adjusts the position of the preview window."
+          },
           "umath.preview.position": {
             "type": "string",
             "enum": [
@@ -107,7 +108,7 @@
         }
       }
     ],
-    "keybindings":[
+    "keybindings": [
       {
         "command": "umath.preview.closeAllPreview",
         "key": "escape",
@@ -136,7 +137,7 @@
     "eslint": "^8.6.0",
     "glob": "^7.2.0",
     "katex": "^0.15.3",
-    "mathjax-full": "^3.2.0",
+    "mathjax-full": "3.2.0",
     "mocha": "^9.1.3"
   }
 }

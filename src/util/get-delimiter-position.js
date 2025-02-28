@@ -1,20 +1,17 @@
 "use strict";
 
 const vscode = require('vscode')
+const { DELIMITER_REGEX } = require('./constants');
 
-
-const beginDisplayMath = [["$$", "\\[","\\("], ["$$", "\\[","\\(", "\\begin{equation}", "\\begin{equation*}","\\begin{align}", "\\begin{align*}", "\\begin{gather}" , "\\begin{gather*}" , "\\begin{displaymath}","\\begin{math}"]];
-const endDisplayMath  =  [["$$", "\\]","\\)"], ["$$", "\\]","\\)", "\\end{equation}", "\\end{equation*}","\\end{align}", "\\end{align*}", "\\end{gather}" , "\\end{gather*}" , "\\end{displaymath}","\\end{math}"]];
-const beginInlineMath = [["$", "\\("],["$", "\\(", "\\begin{math}"]];
-const endInlineMath = [["$", "\\)"],["$", "\\)", "\\end{math}"]];
-
-function getBegin(isLatex,isDisplay){
-    const  newGetBegin = isDisplay ? beginDisplayMath : beginInlineMath;
+function getBegin(isLatex, isDisplay) {
+    const newGetBegin = isDisplay ? DELIMITER_REGEX.beginDisplayMath
+        : DELIMITER_REGEX.beginInlineMath;
     return newGetBegin[+isLatex]
 }
 
-function getEnd(isLatex, isDisplay){
-    const  newGetEnd = isDisplay ? endDisplayMath : endInlineMath;
+function getEnd(isLatex, isDisplay) {
+    const newGetEnd = isDisplay ? DELIMITER_REGEX.endDisplayMath
+        : DELIMITER_REGEX.endInlineMath;
     return newGetEnd[+isLatex]
 }
 
@@ -37,7 +34,7 @@ function MatchInfo(matchStr, matchStrIndex) {
 function searchSubStr(strArr, str, lastMatch) {
     for (let count = 0; count < strArr.length; count++) {
         let charIndex = lastMatch ? str.lastIndexOf(strArr[count]) : str.indexOf(strArr[count])
-        if ( charIndex !== -1 ) 
+        if (charIndex !== -1)
             return new MatchInfo(strArr[count], charIndex)
     }
     return null;

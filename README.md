@@ -47,12 +47,33 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
     - to get TextMate scope of text.
     - now you can uninstall *draivin.hscopes* (**HyperScopes**) if no extension depends on that.
  
+## Known Isseus
+- Regarding the horizontal instability of the preview window.
+    When **Automatically adjust preview position** is enabled, the preview window can not not exceed the text position boundaries. In contexts with excessive indentation or empty lines, the preview window may exhibit lateral oscillations (left-right swaying). Setting **position: absolute** for the **defaultCss** variable in the file `"./src/math-preview.js"` fails to resolve this issue, while alternative configurations like **fixed**  cannot guarantee stable preview performance under normal conditions.
+- Automatically adjusting the preview window affects performance?
+    The preview window will be re-rendered every time the window is scrolled, which will inevitably have an impact on performance. However everyone's computer hardware configuration is different, and you need to decide whether to turn it on or not according to the actual situation. Honestly, the code can still be optimized further:).
+
 ## Todo
 
-
 - [ ] Add `cursor` to "Position"(`umath.preview.position`) options.
-- [ ] Automatically adjust preview position.
+- [x] Automatically adjust preview position.
 - [x] Add `escape` keybinding for closing preview panel.
 - [x] Support user-defined CSS style
 - [x] Support more environments.
 - [x] Fix alignment bug
+
+## Debugging
+- Install node.js(Version 18.0.0 recommended)
+    
+    Run `node -v` and `npm -v` to confirm the version.
+
+- Run `npm run install` in the terminal to install **devDependencies** in the `"./package.json"`.
+
+    **Version 3.2.0** is recommended for **mathjax-full**. Otherwise, an error message will be reported:**Cannot set property RequireLoad of #&lt;Object&gt; which has only a getter.**
+
+- Run `npm run esbuild-watch`in the terminal.
+
+- Open `./dist/extension.js` and press F5 (`".vscode/launch.json"` needs to be configured in advance).
+
+## Acknowledgement
+- Part of the code is generated based on the `DeepSeek-Coder`,such as the function `getMaxHeightValueAndUnit` in the `"./src/util/autoPreviewPosition.js`

@@ -19,15 +19,24 @@ MathJax.loader.preLoad(
     'input/tex-full',
     'output/svg',
     'output/svg/fonts/tex'
-    );
+);
 MathJax.config.startup.ready();
 
 const mathjaxRenderer = async (tex, isBlock = true) => {
     // enable render \\ as line break
     if (isBlock) tex = `\\displaylines{${tex}}`;
-    
-    const node = await MathJax.tex2svgPromise(tex, {display: isBlock});
+
+    const node = await MathJax.tex2svgPromise(tex, { display: isBlock });
     const svg = MathJax.startup.adaptor.innerHTML(node);
+
+    // Parse the SVG string to get the height
+    /** 
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
+    const svgElement = svgDoc.documentElement;
+    const height = svgElement.getAttribute('height');
+    */
+
 
     // clear && remove package from \requrie{}
     MathJax.startup.document.clear();
@@ -43,8 +52,16 @@ const katexRenderer = async (tex, isBlock = true) => {
         throwOnError: false
     }).slice(20, -7);
 
-    const node = await MathJax.mathml2svgPromise(mml, {display: isBlock});
+    const node = await MathJax.mathml2svgPromise(mml, { display: isBlock });
     const svg = MathJax.startup.adaptor.innerHTML(node);
+
+    // Parse the SVG string to get the height
+        /**
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
+    const svgElement = svgDoc.documentElement;
+    const height = svgElement.getAttribute('height');
+    */
 
     MathJax.startup.document.clear();
 

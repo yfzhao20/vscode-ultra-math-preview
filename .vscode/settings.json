@@ -1,0 +1,6 @@
+{
+    "umath.preview.enableMathPreview": true,
+    "umath.preview.AutoAdjustPreviewPosition": true,
+    "umath.preview.position": "bottom",
+    "umath.preview.renderer": "mathjax"
+}
