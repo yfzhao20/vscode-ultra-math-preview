@@ -131,6 +131,7 @@ Thanks to @Eumeryx .
 
 ## [0.2.5]
 
-- NEW: Added the function of automatically adjusting the position of the preview window (`"src/util/autoPreviewPosition.js"`), which can automatically adjust the position according to the user-defined window size or preview window height.
-- NEW: Add the Debounce Time to suit different device performance..
-- Other: Refactore and modularize.
+- NEW: add the option for adjusting preview position
+- FIX: fix scroll bar issue
+- Other: several enhancements.
+- Other: update README
