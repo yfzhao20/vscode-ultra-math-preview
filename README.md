@@ -63,6 +63,7 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 ## Todo
 
+- [ ] Added support for asciidoc|rmarkdown|jupyter.
 - [x] Add `cursor` to "Position"(`umath.preview.position`) options.
 - [x] Automatically adjust preview position.
 - [x] Add `escape` keybinding for closing preview panel.
