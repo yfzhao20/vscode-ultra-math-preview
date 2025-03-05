@@ -128,3 +128,10 @@ Thanks to @Eumeryx .
 - 更改了svg字符串处理逻辑，字符串处理效率提升 5000% （其实是填了之前的坑，这样字符串处理用时从 ~3 ms 降低到 ~100 us）
 - 重写了自定义宏的处理逻辑
 -->
+
+## [0.2.5]
+
+- NEW: add the option for adjusting preview position
+- FIX: fix scroll bar issue
+- Other: several enhancements.
+- Other: update README
