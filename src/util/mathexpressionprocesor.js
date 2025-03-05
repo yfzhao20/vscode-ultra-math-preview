@@ -2,6 +2,7 @@
 
 const vscode = require('vscode')
 const { PreviewState } = require('../index');
+const { cursorInsertString } = require('./constants')
 const { defaultCSS, MATH_REPLACE_REGEX } = require('./constants');
 const { pushPreview } = require('./pushpreview')
 const {
@@ -21,6 +22,10 @@ function processMathExpression(document, testScope, position) {
 
     const mathRange = calculateMathCutRange(beginInfo, endInfo);
     let mathExpression = document.getText(mathRange);
+    const IsEnableCursor = PreviewState.config.enableCursor;
+    if (IsEnableCursor) {
+        mathExpression = InsertCursor(mathExpression, mathRange, position);
+    }
 
     return {
         mathExpression: processMathContent(mathExpression, testScope),
@@ -28,6 +33,43 @@ function processMathExpression(document, testScope, position) {
         beginInfo,
         endInfo
     };
+}
+
+function InsertCursor(mathExpression, mathRange, position) {
+    // Gets the math formula scope of the current cursor position
+    const CursorType = PreviewState.config.cursorType;
+
+    let Cart;
+    switch (CursorType) {
+        case "Hand-shape emoji":
+            Cart = cursorInsertString.HandShapeEmoji; break;
+        case "blacktriangleright":
+            Cart = cursorInsertString.BlackTriangleRight; break;
+        default:
+            return mathExpression;
+    }
+
+    const newMathExpression = insertCartAtPosition(mathExpression,
+        mathRange, position, Cart)
+
+    return newMathExpression;
+}
+
+/**
+ * 在指定行和列插入符号
+ * @returns {string} 插入符号后的字符串
+ */
+function insertCartAtPosition(mathExpression, mathRange, position, Cart) {
+    const lines = mathExpression.split('\n');
+    const targetCol = position.character - mathRange.start.character;
+    const targetline = position.line - mathRange.start.line;
+
+    const targetStringLine = lines[targetline];
+    const newLine = targetStringLine.slice(0, targetCol) + Cart
+        + targetStringLine.slice(targetCol);
+    lines[targetline] = newLine;
+
+    return lines.join('\n');
 }
 
 // svg Height calculator
@@ -76,7 +118,7 @@ function getConfig(section, key, defaultValue) {
 
 // Calculate the preview position
 function calculatePreviewPosition(lineHeightConfig, height, visibleRanges, configPosition, beginInfo, endInfo) {
-    const lineHeight = Math.ceil(height / lineHeightConfig);
+    const lineHeight = Math.floor(height / lineHeightConfig);
     const Isbottom = Boolean(configPosition === 'bottom');
     const candidate = Isbottom ? endInfo.insertPosition.line
         : beginInfo.insertPosition.line;
@@ -106,7 +148,7 @@ function calculateMathCutRange(beginInfo, endInfo) {
     );
 }
 
-// Work with mathematical expression content
+// deal with mathematical expression content
 function processMathContent(mathExpression, testScope) {
     if (testScope.isDisplayMath && testScope.scope.includes("quote")) {
         return mathExpression.replace(MATH_REPLACE_REGEX.blockquote, "");

@@ -11,6 +11,11 @@ const defaultCSS = {
     border: 0.5px solid var(--vscode-editorWidget-border);'
 }
 
+const cursorInsertString = {
+    HandShapeEmoji: ' \\unicode{x1F446} ',
+    BlackTriangleRight: ' \\blacktriangleright '
+}
+
 const SVG_REPLACE_REGEX = {
     style: /(?<=style\s*=\s*)"/,
     container: /<mjx-container[^<]*><svg/,
@@ -42,6 +47,7 @@ const DELIMITER_REGEX = {
 
 module.exports = {
     defaultCSS,
+    cursorInsertString,
     SVG_REPLACE_REGEX,
     MATH_REPLACE_REGEX,
     AUTO_PREVIEW_POSITION_REGEX,
