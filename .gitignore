@@ -2,3 +2,4 @@ node_modules/
 
 dist/extension.js
 dist/extension.js.map
+.vscode/settings.json
