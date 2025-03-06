@@ -39,8 +39,8 @@ const AUTO_PREVIEW_POSITION_REGEX = {
 }
 
 const DELIMITER_REGEX = {
-    beginDisplayMath:[["$$", "\\[", "\\("], ["$$", "\\[", "\\(", "\\begin{equation}", "\\begin{equation*}", "\\begin{align}", "\\begin{align*}", "\\begin{gather}", "\\begin{gather*}", "\\begin{displaymath}", "\\begin{math}"]],
-    endDisplayMath:[["$$", "\\]", "\\)"], ["$$", "\\]", "\\)", "\\end{equation}", "\\end{equation*}", "\\end{align}", "\\end{align*}", "\\end{gather}", "\\end{gather*}", "\\end{displaymath}", "\\end{math}"]],
+    beginDisplayMath: [["$$", "\\[", "\\("], ["$$", "\\[", "\\(", "\\begin{equation}", "\\begin{equation*}", "\\begin{align}", "\\begin{align*}", "\\begin{gather}", "\\begin{gather*}", "\\begin{displaymath}", "\\begin{math}", "\\begin{multline}", "\\begin{multline*}"]],
+    endDisplayMath: [["$$", "\\]", "\\)"], ["$$", "\\]", "\\)", "\\end{equation}", "\\end{equation*}", "\\end{align}", "\\end{align*}", "\\end{gather}", "\\end{gather*}", "\\end{displaymath}", "\\end{math}","\\end{multline}", "\\end{multline*}"]],
     beginInlineMath : [["$", "\\("], ["$", "\\(", "\\begin{math}"]],
     endInlineMath :[["$", "\\)"], ["$", "\\)", "\\end{math}"]]
 }
