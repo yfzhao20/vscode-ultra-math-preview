@@ -85,4 +85,4 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 - Open `./dist/extension.js` and press F5 (`".vscode/launch.json"` needs to be configured in advance).
 
 ## Acknowledgement
-- Part of the code is generated based on the `DeepSeek-Coder`,such as the function `getMaxHeightValueAndUnit` in the `"./src/util/autoPreviewPosition.js`
+- Part of the code is generated based on the `DeepSeek-Coder`,such as the function `getMaxHeightValueAndUnit` in the `"./src/util/autoPreviewPosition.js"`
