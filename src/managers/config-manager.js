@@ -30,11 +30,11 @@ const ConfigManager = {
             'macros': 'macro',
             'enableMathPreview': 'enablePreview',
             'AutoAdjustPreviewPosition': 'AutoAdjustPosition',
-            'DebounceTime':'DebounceTime',
+            'DebounceTime': 'DebounceTime',
             'position': 'position',
             'renderer': 'renderer',
-            'EnableCursor': 'EnableCursor',
-            'CursorType':'CursorType',
+            'EnableCursor': 'enableCursor',
+            'CursorType': 'cursorType',
             'customCSS': 'css'
         };
 
