@@ -75,5 +75,6 @@ async function _setPreview(document, position) {
 }
 
 module.exports = {
-    setPreview
+    setPreview,
+    _setPreview
 };

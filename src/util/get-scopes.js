@@ -5,6 +5,13 @@ const hscopes = vscode.extensions.getExtension('yfzhao.hscopes-booster');
 
 // Caches the most recent scoping results
 let lastScopeCache = null;
+
+/**
+ * Gets the cached math scope for the given document and position.
+ * @param {vscode.TextDocument} document - The document to get the scope from.
+ * @param {vscode.Position} position - The position in the document to get the scope at.
+ * @returns {Object | undefined} - The cached math scope information.
+ */
 function getCachedMathScope(document, position) {
     const key = `${document.uri.toString()}:${position.line}:${position.character}`;
     if (!lastScopeCache || lastScopeCache.key !== key) {
@@ -17,9 +24,10 @@ function getCachedMathScope(document, position) {
 }
 
 /**
- * get Math Scope
- * @param {vscode.TextDocument} document 
- * @param {vscode.Position} position 
+ * Gets the math scope for the given document and position.
+ * @param {vscode.TextDocument} document - The document to get the scope from.
+ * @param {vscode.Position} position - The position in the document to get the scope at.
+ * @returns {Object | undefined} - The math scope information.
  */
 function getMathScope(document, position) {
     if (!document.languageId.match(/latex|markdown/))
@@ -81,10 +89,10 @@ function getMathScope(document, position) {
 }
 
 /**
- * get TextMate Scope
- * @param {vscode.TextDocument} document 
- * @param {vscode.Position} position 
- * @returns { string[] | undefined}
+ * Gets the TextMate scope for the given document and position.
+ * @param {vscode.TextDocument} document - The document to get the scope from.
+ * @param {vscode.Position} position - The position in the document to get the scope at.
+ * @returns {string[] | undefined} - The TextMate scope information.
  */
 function getScope(document, position) {
     if (!hscopes || !document || !position) {
@@ -94,6 +102,11 @@ function getScope(document, position) {
     return hscopes?.exports?.getScopeAt(document, position);
 }
 
+/**
+ * Checks if the given scope is a valid math scope.
+ * @param {Object} scope - The scope to check.
+ * @returns {boolean} - True if the scope is valid, false otherwise.
+ */
 function isValidMathScope(scope) {
     return scope && !scope.isInBeginDelimiter && !scope.isInEndDelimiter;
 }

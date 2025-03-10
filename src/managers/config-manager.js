@@ -13,10 +13,12 @@ const ConfigManager = {
         PreviewState.config = {
             macro: this.get('macros'),
             enablePreview: this.get('enableMathPreview'),
-            AutoAdjustPosition: this.get('AutoAdjustPreviewPosition'),
-            DebounceTime: this.get('DebounceTime'),
+            autoAdjustPosition: this.get('AutoAdjustPreviewPosition'),
+            debounceTime: this.get('DebounceTime'),
             position: this.get('position'),
             renderer: this.get('renderer'),
+            enableCursor: this.get('EnableCursor'),
+            cursorType: this.get("CursorType"),
             css: this.get('customCSS')?.join('') || ""
         };
     },
@@ -28,9 +30,11 @@ const ConfigManager = {
             'macros': 'macro',
             'enableMathPreview': 'enablePreview',
             'AutoAdjustPreviewPosition': 'AutoAdjustPosition',
-            'DebounceTime':'debounceTime',
+            'DebounceTime': 'DebounceTime',
             'position': 'position',
             'renderer': 'renderer',
+            'EnableCursor': 'enableCursor',
+            'CursorType': 'cursorType',
             'customCSS': 'css'
         };
 

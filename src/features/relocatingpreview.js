@@ -51,5 +51,6 @@ async function _reLocatingPreview(svgString) {
 }
 
 module.exports = {
-    reLocatingPreview
+    reLocatingPreview,
+    _reLocatingPreview
 };
