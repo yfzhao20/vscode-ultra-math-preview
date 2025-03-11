@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/yfzhao20/vscode-ultra-math-preview/issues"
   },
-  "version": "0.2.5",
+  "version": "0.2.6",
   "publisher": "yfzhao",
   "preview": true,
   "engines": {
@@ -99,6 +99,20 @@
             ],
             "default": "mathjax",
             "description": "Select math renderer."
+          },
+          "umath.preview.EnableCursor": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show cursor in mathpreivew."
+          },
+          "umath.preview.CursorType": {
+            "type": "string",
+            "enum": [
+              "Hand-shape emoji",
+              "blacktriangleright"
+              ],
+            "default": "Hand-shape emoji",
+            "description": "Select the cursor type in mathpreivew"
           },
           "umath.preview.macros": {
             "type": "array",

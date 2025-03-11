@@ -18,10 +18,12 @@ const PreviewState = {
     config: {
         macro: null,
         enablePreview: false,
-        AutoAdjustPosition: false,
+        autoAdjustPosition: false,
         debounceTime: 0,
         position: null,
         renderer: null,
+        enableCursor: false,
+        cursorType:null,
         css: ""
     },
     ERROR: {

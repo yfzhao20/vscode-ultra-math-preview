@@ -1,8 +1,8 @@
 "use strict";
 
 const { PreviewState, temp } = require('../index');
-const { setPreview } = require('../features/setpreview');
-const { reLocatingPreview } = require('../features/relocatingpreview');
+const { setPreview, _setPreview } = require('../features/setpreview');
+const { reLocatingPreview, _reLocatingPreview } = require('../features/relocatingpreview');
 const { MacroProcessor } = require('../util/get-macros');
 
 module.exports = {
@@ -17,15 +17,20 @@ module.exports = {
         },
 
         onSelectionChange(e) {
-            if (e) {
-                setPreview(e.textEditor.document, e.selections[0]?.active);
-                temp.selections = e.selections;
-            }
+            if (!e) return;
+            const { document, selections } = e.textEditor;
+            const activePosition = selections[0]?.active;
+            const setPreviewFunc =
+                PreviewState.config.debounceTime == 0 ? _setPreview : setPreview;
+            setPreviewFunc(document, activePosition);
+            temp.selections = selections;
         },
 
         onVisibleRangesChange() {
-            if (PreviewState.config.AutoAdjustPosition && temp.svgString) {
-                reLocatingPreview(temp.svgString);
+            if (PreviewState.config.autoAdjustPosition && temp.svgString) {
+                const reLocatingFunc =
+                    PreviewState.config.debounceTime == 0 ? _reLocatingPreview : reLocatingPreview;
+                reLocatingFunc(temp.svgString);
             }
         }
     }

@@ -33,6 +33,14 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 
 - You can set preview panel on the top/bottom of math block by `umath.preview.position` (*Umath &gt; Preview: Position*) option.
 
+- You can set whether you want to adjust the position of the math formula preview in real time by `umath.preview.AutoAdjustPreviewPosition`, and how fast the math formula preview is updated by `umath.preview.DebounceTime`.
+
+![](https://raw.githubusercontent.com/yfzhao20/vscode-ultra-math-preview/main/image/AutoAdjustPreviewPosition.gif)
+
+- You can set whether (`umath.preview.EnableCursor`) and how (`umath.preview.CursorType`) you want the mouse position to be displayed in the math formula preview. Currently, only **hand-shaped emoji** (👆) and **black triangles** ($\blacktriangleright$) are supported
+
+![](https://raw.githubusercontent.com/yfzhao20/vscode-ultra-math-preview/main/image/cursorposition.gif)
+
 - You can set the renderer as `MathJax`/`KaTeX` by `umath.preview.renderer` (*Umath &gt; Preview: Renderer*).
 
 - You can set Custom CSS in `umath.preview.customCSS` (*Umath &gt; Preview: Custom CSS*).
@@ -50,12 +58,13 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 ## Known Isseus
 - Regarding the horizontal instability of the preview window.
     When **Automatically adjust preview position** is enabled, the preview window can not not exceed the text position boundaries. In contexts with excessive indentation or empty lines, the preview window may exhibit lateral oscillations (left-right swaying). Setting **position: absolute** for the **defaultCss** variable in the file `"./src/math-preview.js"` fails to resolve this issue, while alternative configurations like **fixed**  cannot guarantee stable preview performance under normal conditions.
-- Automatically adjusting the preview window affects performance?
-    The preview window will be re-rendered every time the window is scrolled, which will inevitably have an impact on performance. However everyone's computer hardware configuration is different, and you need to decide whether to turn it on or not according to the actual situation. Honestly, the code can still be optimized further:).
+- When I enable cursor position (`umath.preview.EnableCursor:true`), why sometimes mathpreview doesn't show up?
+    The principle of inserting cursor positions in mathematical formulas is to insert specific symbols at the corresponding positions. In some places, carets cause formula compilation errors and do not output previews. Statements that are known to cause this error include `\left` and `\right`.
 
 ## Todo
 
-- [ ] Add `cursor` to "Position"(`umath.preview.position`) options.
+- [ ] Added support for asciidoc|rmarkdown|jupyter.
+- [x] Add `cursor` to "Position"(`umath.preview.position`) options.
 - [x] Automatically adjust preview position.
 - [x] Add `escape` keybinding for closing preview panel.
 - [x] Support user-defined CSS style
@@ -76,4 +85,4 @@ Enjoy and rate five-stars ⭐⭐⭐⭐⭐ ~
 - Open `./dist/extension.js` and press F5 (`".vscode/launch.json"` needs to be configured in advance).
 
 ## Acknowledgement
-- Part of the code is generated based on the `DeepSeek-Coder`,such as the function `getMaxHeightValueAndUnit` in the `"./src/util/autoPreviewPosition.js`
+- Part of the code is generated based on the `DeepSeek-Coder`,such as the function `getMaxHeightValueAndUnit` in the `"./src/util/autoPreviewPosition.js"`

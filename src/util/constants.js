@@ -11,6 +11,11 @@ const defaultCSS = {
     border: 0.5px solid var(--vscode-editorWidget-border);'
 }
 
+const cursorInsertString = {
+    HandShapeEmoji: ' \\unicode{x1F446} ',
+    BlackTriangleRight: ' \\blacktriangleright '
+}
+
 const SVG_REPLACE_REGEX = {
     style: /(?<=style\s*=\s*)"/,
     container: /<mjx-container[^<]*><svg/,
@@ -34,14 +39,15 @@ const AUTO_PREVIEW_POSITION_REGEX = {
 }
 
 const DELIMITER_REGEX = {
-    beginDisplayMath:[["$$", "\\[", "\\("], ["$$", "\\[", "\\(", "\\begin{equation}", "\\begin{equation*}", "\\begin{align}", "\\begin{align*}", "\\begin{gather}", "\\begin{gather*}", "\\begin{displaymath}", "\\begin{math}"]],
-    endDisplayMath:[["$$", "\\]", "\\)"], ["$$", "\\]", "\\)", "\\end{equation}", "\\end{equation*}", "\\end{align}", "\\end{align*}", "\\end{gather}", "\\end{gather*}", "\\end{displaymath}", "\\end{math}"]],
+    beginDisplayMath: [["$$", "\\[", "\\("], ["$$", "\\[", "\\(", "\\begin{equation}", "\\begin{equation*}", "\\begin{align}", "\\begin{align*}", "\\begin{gather}", "\\begin{gather*}", "\\begin{displaymath}", "\\begin{math}", "\\begin{multline}", "\\begin{multline*}"]],
+    endDisplayMath: [["$$", "\\]", "\\)"], ["$$", "\\]", "\\)", "\\end{equation}", "\\end{equation*}", "\\end{align}", "\\end{align*}", "\\end{gather}", "\\end{gather*}", "\\end{displaymath}", "\\end{math}","\\end{multline}", "\\end{multline*}"]],
     beginInlineMath : [["$", "\\("], ["$", "\\(", "\\begin{math}"]],
     endInlineMath :[["$", "\\)"], ["$", "\\)", "\\end{math}"]]
 }
 
 module.exports = {
     defaultCSS,
+    cursorInsertString,
     SVG_REPLACE_REGEX,
     MATH_REPLACE_REGEX,
     AUTO_PREVIEW_POSITION_REGEX,
