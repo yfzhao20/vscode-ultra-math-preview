@@ -135,3 +135,11 @@ Thanks to @Eumeryx .
 - FIX: fix scroll bar issue
 - Other: several enhancements.
 - Other: update README
+
+## [0.2.6]
+
+- NEW: Add cursor position display
+
+## [0.2.7]
+
+- Fix: resolve custom macro malfunction in versions 0.2.5 and 0.2.6
