@@ -67,7 +67,7 @@ async function _setPreview(document, position) {
         endInfo
     );
 
-    finalizePreview(mathExpression, isDisplayMath, instLine, endInfo);
+    finalizePreview(PreviewState.macrosString + mathExpression, isDisplayMath, instLine, endInfo);
 
     temp.height = height;
     temp.beginInfo = beginInfo;
