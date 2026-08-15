@@ -1,4 +1,5 @@
 src
 test
+test-unit
 
 dist/extension.js.map

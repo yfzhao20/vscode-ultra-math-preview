@@ -2,6 +2,12 @@
 
 All notable changes to the "ultra-math-preview" extension will be documented in this file.
 
+## [0.2.8]
+
+- FIX: keep the preview cursor aligned in multiline, indented, CRLF, and Unicode formulas.
+- FIX: prevent stale asynchronous renders and scroll relocation from restoring an old cursor position.
+- FIX: apply debounce and auto-position configuration changes without restarting VS Code.
+
 ## [0.0.1] 
 
 (*insider*)

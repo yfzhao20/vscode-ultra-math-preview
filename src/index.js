@@ -3,6 +3,7 @@
 // global variables
 // from setpreview to relocatingpreview
 const temp = {
+    previewSnapshot: null,
     svgString: null,
     height: null,
     beginInfo: null,
@@ -14,6 +15,7 @@ const temp = {
 // State management objects
 const PreviewState = {
     decorationArray: [],
+    renderRequestId: 0,
     macrosString: "",
     config: {
         macro: null,

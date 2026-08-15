@@ -29,8 +29,8 @@ const ConfigManager = {
         const configMap = {
             'macros': 'macro',
             'enableMathPreview': 'enablePreview',
-            'AutoAdjustPreviewPosition': 'AutoAdjustPosition',
-            'DebounceTime': 'DebounceTime',
+            'AutoAdjustPreviewPosition': 'autoAdjustPosition',
+            'DebounceTime': 'debounceTime',
             'position': 'position',
             'renderer': 'renderer',
             'EnableCursor': 'enableCursor',

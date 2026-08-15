@@ -9,29 +9,40 @@ const {
 } = require('../util/mathexpressionprocesor');
 
 let renderTimeout_reLocatingPreview;
-const RENDER_DEBOUNCE_reLocatingPreview = PreviewState.config.debounceTime; // unit:ms
 
 // Added rendering request stabilization
-function reLocatingPreview(svgString) {
+function reLocatingPreview(previewSnapshot, editor) {
     clearTimeout(renderTimeout_reLocatingPreview);
+
+    if (PreviewState.config.debounceTime == 0) {
+        return _reLocatingPreview(previewSnapshot, editor);
+    }
+
     renderTimeout_reLocatingPreview = setTimeout(
-        () => _reLocatingPreview(svgString), RENDER_DEBOUNCE_reLocatingPreview);
+        () => _reLocatingPreview(previewSnapshot, editor),
+        PreviewState.config.debounceTime
+    );
 }
 
 
-async function _reLocatingPreview(svgString) {
-    clearPreview();
-    if (!PreviewState.config.enablePreview ||!svgString || PreviewState.ERROR.occurred || !temp.IsMathScope) return;
+function _reLocatingPreview(previewSnapshot, editor) {
+    if (!PreviewState.config.enablePreview
+        || !PreviewState.config.autoAdjustPosition
+        || !previewSnapshot
+        || previewSnapshot.requestId !== PreviewState.renderRequestId
+        || previewSnapshot.editor !== editor
+        || editor !== vscode.window.activeTextEditor
+        || PreviewState.ERROR.occurred
+        || !temp.IsMathScope) return;
 
-    // get the global var
-    const height = temp.height;
-    const beginInfo = temp.beginInfo;
-    const endInfo = temp.endInfo;
+    clearPreview(false);
+
+    const { svgString, height, beginInfo, endInfo } = previewSnapshot;
 
     // Render the preview and set the position
     const lineHeight = getConfig('editor', 'lineHeight', 0);
     const lineHeightConfig = lineHeight === 0 ? 1.2 : lineHeight;
-    const visibleRanges = vscode.window.activeTextEditor.visibleRanges[0];
+    const visibleRanges = editor.visibleRanges[0];
     const instLine = calculatePreviewPosition(
         lineHeightConfig,
         height,
@@ -47,7 +58,7 @@ async function _reLocatingPreview(svgString) {
     let mathPreview = createPreview(svgString)
     vscode.commands.executeCommand('setContext', 'umathShowPreview', true)
     PreviewState.decorationArray.push(mathPreview)
-    vscode.window.activeTextEditor.setDecorations(mathPreview, [new vscode.Range(previewPosition, previewPosition)])
+    editor.setDecorations(mathPreview, [new vscode.Range(previewPosition, previewPosition)])
 }
 
 module.exports = {

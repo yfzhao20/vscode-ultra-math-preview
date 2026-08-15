@@ -10,32 +10,42 @@ const { defaultCSS, SVG_REPLACE_REGEX } = require('./constants');
  * @param {string} mathExpression 
  * @param {boolean} isBlock 
  * @param {vscode.Position} previewPosition 
+ * @param {number} requestId
+ * @param {vscode.TextEditor} editor
+ * @returns {Promise<string | null>} The committed SVG, or null when obsolete.
  */
-function pushPreview(mathExpression, isBlock, previewPosition) {
-    texRenderer[PreviewState.config.renderer](mathExpression, isBlock)
-        .then((svgString) => {
-            // exclude error case
-            if (svgString.includes("error"))
-                return
-            // create preview panel
-            let mathPreview = createPreview(svgString)
-            temp.svgString = svgString;
-            // set when clause
-            vscode.commands.executeCommand('setContext', 'umathShowPreview', true)
-            PreviewState.decorationArray.push(mathPreview)
-            vscode.window.activeTextEditor.setDecorations(mathPreview, [new vscode.Range(previewPosition, previewPosition)])
-        })
-        .catch((err) => {
-            console.log(err.message);
-            if (PreviewState.ERROR.occurred) {
-                PreviewState.ERROR.occurred = false;
-                PreviewState.ERROR.reset = false;
-            }
-            else {
-                console.log("retry");
-                PreviewState.ERROR.reset = true;
-            }
-        });
+async function pushPreview(mathExpression, isBlock, previewPosition, requestId, editor) {
+    try {
+        const svgString = await texRenderer[PreviewState.config.renderer](mathExpression, isBlock);
+
+        if (requestId !== PreviewState.renderRequestId
+            || editor !== vscode.window.activeTextEditor
+            || !PreviewState.config.enablePreview
+            || svgString.includes("error")) {
+            return null;
+        }
+
+        // create preview panel
+        let mathPreview = createPreview(svgString)
+        // set when clause
+        vscode.commands.executeCommand('setContext', 'umathShowPreview', true)
+        PreviewState.decorationArray.push(mathPreview)
+        editor.setDecorations(mathPreview, [new vscode.Range(previewPosition, previewPosition)])
+        return svgString;
+    } catch (err) {
+        if (requestId !== PreviewState.renderRequestId) return null;
+
+        console.log(err.message);
+        if (PreviewState.ERROR.occurred) {
+            PreviewState.ERROR.occurred = false;
+            PreviewState.ERROR.reset = false;
+        }
+        else {
+            console.log("retry");
+            PreviewState.ERROR.reset = true;
+        }
+        return null;
+    }
 }
 
 /**
@@ -77,9 +87,15 @@ function getThemeColor() {
     return themeColorCache;
 }
 
-function clearPreview() {
+function clearPreview(invalidatePending = true) {
+    if (invalidatePending) {
+        PreviewState.renderRequestId += 1;
+        temp.previewSnapshot = null;
+        temp.svgString = null;
+    }
+
     PreviewState.decorationArray.forEach(decoration => {
-        vscode.window.activeTextEditor?.setDecorations(decoration, []);
+        decoration.dispose();
     });
     PreviewState.decorationArray = [];
 }

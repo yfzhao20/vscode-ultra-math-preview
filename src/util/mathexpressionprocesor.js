@@ -3,6 +3,7 @@
 const vscode = require('vscode')
 const { PreviewState } = require('../index');
 const { cursorInsertString } = require('./constants')
+const { insertTextAtDocumentPosition } = require('./cursor-position');
 const { defaultCSS, MATH_REPLACE_REGEX } = require('./constants');
 const { pushPreview } = require('./pushpreview')
 const {
@@ -31,7 +32,7 @@ function processMathExpression(document, testScope, position) {
     let mathExpression = document.getText(mathRange);
     const IsEnableCursor = PreviewState.config.enableCursor;
     if (IsEnableCursor) {
-        mathExpression = InsertCursor(mathExpression, mathRange, position);
+        mathExpression = InsertCursor(document, mathExpression, mathRange, position);
     }
 
     return {
@@ -44,12 +45,13 @@ function processMathExpression(document, testScope, position) {
 
 /**
  * Inserts a cursor symbol into the math expression at the specified position.
+ * @param {vscode.TextDocument} document - The document containing the expression.
  * @param {string} mathExpression - The math expression to insert the cursor into.
  * @param {vscode.Range} mathRange - The range of the math expression in the document.
  * @param {vscode.Position} position - The position of the cursor in the document.
  * @returns {string} - The math expression with the cursor symbol inserted.
  */
-function InsertCursor(mathExpression, mathRange, position) {
+function InsertCursor(document, mathExpression, mathRange, position) {
     const CursorType = PreviewState.config.cursorType;
 
     let Cart;
@@ -62,31 +64,10 @@ function InsertCursor(mathExpression, mathRange, position) {
             return mathExpression;
     }
 
-    const newMathExpression = insertCartAtPosition(mathExpression,
-        mathRange, position, Cart)
+    const newMathExpression = insertTextAtDocumentPosition(
+        document, mathExpression, mathRange.start, position, Cart)
 
     return newMathExpression;
-}
-
-/**
- * Inserts a symbol at the specified position in the math expression.
- * @param {string} mathExpression - The math expression to insert the symbol into.
- * @param {vscode.Range} mathRange - The range of the math expression in the document.
- * @param {vscode.Position} position - The position of the cursor in the document.
- * @param {string} Cart - The symbol to insert.
- * @returns {string} - The math expression with the symbol inserted.
- */
-function insertCartAtPosition(mathExpression, mathRange, position, Cart) {
-    const lines = mathExpression.split('\n');
-    const targetCol = position.character - mathRange.start.character;
-    const targetline = position.line - mathRange.start.line;
-
-    const targetStringLine = lines[targetline];
-    const newLine = targetStringLine.slice(0, targetCol) + Cart
-        + targetStringLine.slice(targetCol);
-    lines[targetline] = newLine;
-
-    return lines.join('\n');
 }
 
 // svg Height calculator
@@ -186,11 +167,14 @@ function calculatePreviewPosition(lineHeightConfig, height, visibleRanges, confi
  * @param {boolean} isDisplayMath - Whether the math expression is display math.
  * @param {number} line - The line number to preview the expression at.
  * @param {Object} endInfo - The end info of the math expression.
+ * @param {number} requestId - Identifier of the selection request being rendered.
+ * @param {vscode.TextEditor} editor - Editor that initiated the preview request.
+ * @returns {Promise<string | null>} The committed SVG, or null when obsolete.
  */
-function finalizePreview(expression, isDisplayMath, line, endInfo) {
+function finalizePreview(expression, isDisplayMath, line, endInfo, requestId, editor) {
     const charPos = endInfo.insertPosition.character - (endInfo.match?.matchStr?.length ?? 0);
     const previewPosition = new vscode.Position(line, charPos);
-    pushPreview(expression, isDisplayMath, previewPosition);
+    return pushPreview(expression, isDisplayMath, previewPosition, requestId, editor);
 }
 
 /**
